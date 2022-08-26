@@ -3,4 +3,5 @@ __pycache__/
 
 # datasets
 
-Patients_ *
+Patients_test.csv
+Patients_train.csv
