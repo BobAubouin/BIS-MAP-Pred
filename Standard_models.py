@@ -222,7 +222,7 @@ def discretize(A,B,Te):
     return Ad, Bd
 
 #%% load data
-Patients_test = pd.read_csv("./Patients_test.csv", index_col=0)
+Patients_test = pd.read_csv("./Patients_train.csv", index_col=0)
 Patients_test['Propofol'].fillna(0,inplace=True)
 Patients_test['Remifentanil'].fillna(0,inplace=True)
 #%% Perform simulation
@@ -247,7 +247,7 @@ for caseid in Patients_test['caseid'].unique():
     sex = int(Patient_df['sex'][0])
     
     
-    v1_p, Ap = PropoModel('Marsh', age, sex, weight, height)
+    v1_p, Ap = PropoModel('Schnider', age, sex, weight, height)
     v1_r, Ar = RemiModel('Minto', age, sex, weight, height)
     
     Bp = np.zeros((6,1))

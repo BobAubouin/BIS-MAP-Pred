@@ -119,8 +119,11 @@ for caseid in cases['caseid'].unique():
     # Patient_df["Ce_Prop"] = Ce_Prop
     # Patient_df["Ce_Rem"] = Ce_Rem
     
-    Cp_Prop = Patient_df["Cp_Prop"]
-    Cp_Rem = Patient_df["Cp_Rem"]
+    Patient_df.loc[:,"Ce_Prop"] = Patient_df["Ce_Prop"].fillna(value = 0)
+    Patient_df.loc[:,"Ce_Rem"] = Patient_df["Ce_Rem"].fillna(value = 0)
+    
+    Cp_Prop = Patient_df["Cp_Prop"].fillna(value = 0)
+    Cp_Rem = Patient_df["Cp_Rem"].fillna(value = 0)
     
     Cp_Prop = np.concatenate((np.zeros(hist_Cp), Cp_Prop))
     Cp_Rem = np.concatenate((np.zeros(hist_Cp), Cp_Rem))

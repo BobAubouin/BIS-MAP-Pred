@@ -5,3 +5,5 @@ __pycache__/
 
 Patients_test.csv
 Patients_train.csv
+lee_code/cache*
+

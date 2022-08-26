@@ -6,6 +6,7 @@ Created on Tue Aug 23 10:09:38 2022
 @author: aubouinb
 """
 import numpy as np
+import pandas as pd
 from bokeh.plotting import figure, show
 from bokeh.layouts import row, column
 from bokeh.models import Range1d
@@ -43,8 +44,6 @@ def compute_metrics(data):
         MDPE_MAP += case_length *  np.median(PE_MAP)
         MDAPE_BIS += case_length *  np.median(np.abs(PE_BIS))
         MDAPE_MAP += case_length *  np.median(np.abs(PE_MAP))
-        
-        L_test.append(np.median(np.abs(PE_BIS)))
         
         efficiency_case = 4*int(case_length/2)/(np.pi * case_length)
         
@@ -85,18 +84,19 @@ def compute_metrics(data):
     SD_RMSE_MAP = np.std(RMSE_list_MAP)
     
     
-    print("BIS results")
+    print("                 ______   BIS results   ______")
     print( "     MDPE      &       MDAPE      &       RMSE       ")
 
-    print( str(round(MDPE_BIS,2)) + " \pm " + str(round(SD_MDPE_BIS,2)) 
-          + " & " + str(round(MDAPE_BIS,2)) + " \pm " + str(round(SD_MDAPE_BIS,2)) 
-          + " & " + str(round(RMSE_BIS,2)) + " \pm " + str(round(SD_RMSE_BIS,2)))
+    print( "$" + str(round(MDPE_BIS,2)) + " \pm " + str(round(SD_MDPE_BIS,2) ) 
+          + "$ & $" + str(round(MDAPE_BIS,2)) + " \pm " + str(round(SD_MDAPE_BIS,2)) 
+          + "$ & $" + str(round(RMSE_BIS,2)) + " \pm " + str(round(SD_RMSE_BIS,2))+ "$")
 
-    print("MAP results")
-    print( "     MDPE      &       MDAPE      " )
-    print( str(round(MDPE_MAP,2)) + " \pm " + str(round(SD_MDPE_MAP,2)) 
-          + " & " + str(round(MDAPE_MAP,2)) + " \pm " + str(round(SD_MDAPE_MAP,2)) 
-          + " & " + str(round(RMSE_MAP,2)) + " \pm " + str(round(SD_RMSE_MAP,2)))
+    print("\n               ______   MAP results   ______")
+    print( "     MDPE      &       MDAPE      &       RMSE       ")
+
+    print("$" + str(round(MDPE_MAP,2)) + " \pm " + str(round(SD_MDPE_MAP,2)) 
+          + "$ & $" + str(round(MDAPE_MAP,2)) + " \pm " + str(round(SD_MDAPE_MAP,2)) 
+          + "$ & $" + str(round(RMSE_MAP,2)) + " \pm " + str(round(SD_RMSE_MAP,2))+ "$")
 
     BIS_res = [MDPE_BIS, SD_MDPE_BIS, MDAPE_BIS, SD_MDAPE_BIS]
     MAP_res = [MDPE_MAP, SD_MDPE_MAP, MDAPE_MAP, SD_MDAPE_MAP]
@@ -105,14 +105,14 @@ def compute_metrics(data):
 
 
 
-def plot_results(data):
+def plot_results(data, data_train = pd.DataFrame()):
     
     y_true_test = data["true_BIS"].values
     y_pred_test = data["pred_BIS"].values
-    if 'true_BIS_train' in data.columns:
+    if not data_train.empty:
         train = True
-        y_true_train = data["true_BIS_train"].values
-        y_pred_train = data["pred_BIS_train"].values
+        y_true_train = data_train["true_BIS"].values
+        y_pred_train = data_train["pred_BIS"].values
     else:
         train = False
                 
@@ -146,13 +146,11 @@ def plot_results(data):
     
     y_true_test = data["true_MAP"].values
     y_pred_test = data["pred_MAP"].values
-    if 'true_MAP_train' in data.columns:
-        train = True
-        y_true_train = data["true_MAP_train"].values
-        y_pred_train = data["pred_MAP_train"].values
-    else:
-        train = False
-                
+    if train:
+        y_true_train = data_train["true_MAP"].values
+        y_pred_train = data_train["pred_MAP"].values
+
+
     fig1 = figure(plot_width=900, plot_height=450, title = "Data (blue) Vs Fitted data (red)")
     fig1.line(range(0,len(y_true_test)), y_true_test, line_color='navy', legend_label="y")
     fig1.line(range(0,len(y_pred_test)), y_pred_test, line_color='red', legend_label="y predicted")
