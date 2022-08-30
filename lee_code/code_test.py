@@ -20,18 +20,13 @@ licensed to the public domain for academic advancement.
 
 
 
-import os
-import csv
 import pickle
 import numpy as np
 import pandas as pd
-import statsmodels.api as sm
-from  tensorflow.keras.optimizers import Adam
-from  tensorflow.keras.regularizers import l2
-from tensorflow.keras.models import Model, Sequential, load_model
-from tensorflow.keras.layers import Dense, Dropout, LSTM, Input, Concatenate
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from matplotlib import pyplot as plt
+from tensorflow.keras.models import load_model
+
+
 # parameters
 timepoints = 60
 lnode = 8
@@ -40,47 +35,48 @@ batch_size = 64
 cache_path = "cache.var"
 cache_path_test = "cache_perso.var"
 output_dir = "."
-weight_path = output_dir + "/weight matrix.hdf5"
+weight_path = output_dir + "/weights.hdf5"
 
 Data = pd.read_csv("data.csv", index_col=0)
 
-train_p, train_r, train_c, train_y, val_p, val_r, val_c, val_y, test_p, test_r, test_c, test_y = pickle.load(open(cache_path, "rb"))
 test_p, test_r, test_c, test_y = pickle.load(open(cache_path_test, "rb"))
 
 
-train_val_c = train_c + val_c
 
-# convert data to numpy array
 
-train_c = np.array(train_c)
-
-val_c = np.array(val_c)
-
-# normalize data
-mean_c = np.mean(train_val_c, axis=0)
-std_c = np.std(train_val_c, axis=0)
+# normalize data from the training dataset of Lee et al.
+mean_c = [ 56.50928621,   0.49630326,  61.13655517, 162.0409402 ]
+std_c = [ 56.50928621,   0.49630326,  61.13655517, 162.0409402 ]
 
 
 #%% load model
 model = load_model(weight_path)
 
 #%% test model
-sum_err = 0
-cnt_err = 0
-PE_sum = np.zeros(1)
-error = np.zeros(1)
+sample_nb = 0
+
 Ytrue = np.zeros(1)
 Ypred = np.zeros(1)
+
+MDPE_BIS = 0
+MDAPE_BIS = 0
+
+SD_MDPE_BIS = 0
+SD_MDAPE_BIS = 0
+    
+RMSE_list_BIS = []
+
 
 
 print('id\ttesting_err')
 for id in test_p.keys():
-
+    
     case_p = np.array(test_p[id])
     case_r = np.array(test_r[id])
     case_c = np.array(test_c[id])
     true_y = np.array(test_y[id])
     true_y = np.array(true_y)
+    
     try:
         case_p = case_p.reshape(case_p.shape[0], case_p.shape[1], 1)
         case_r = case_r.reshape(case_r.shape[0], case_r.shape[1], 1)
@@ -96,44 +92,50 @@ for id in test_p.keys():
 
     true_y = true_y.T
     pred_y = pred_y[:, 0].T
+    case_len = len(pred_y)
 
-    err = np.mean(np.abs(np.subtract(true_y, pred_y)))
-    PE_sum = np.concatenate((PE_sum, (true_y - pred_y)/true_y), axis=0)
-    error = np.concatenate((error, (true_y - pred_y)*100), axis=0)
+    PE = 100*(true_y - pred_y)/true_y
+    
+    MDPE_BIS += case_len * np.median(PE)
+    MDAPE_BIS += case_len *  np.median(np.abs(PE))
+    print(str(id) + '\t' + str(np.median(np.abs(PE))))
+    efficiency_case = 4*int(case_len/2)/(np.pi * case_len)
+    
+    SD_MDPE_BIS += case_len * np.var(PE) / efficiency_case
+    SD_MDAPE_BIS += case_len * np.var(np.abs(PE)) / efficiency_case
+    
+    RMSE_BIS = np.sqrt(np.mean((100*(true_y - pred_y))**2))
+    RMSE_list_BIS.append(RMSE_BIS)
+    
     Ytrue = np.concatenate((Ytrue, true_y*100), axis=0)
     Ypred = np.concatenate((Ypred, (pred_y)*100), axis=0)
     true_y = true_y.tolist()
     pred_y = pred_y.tolist()
 
-    case_len = len(pred_y)
-    sum_err += err * case_len
-    cnt_err += case_len
+    
+    sample_nb += case_len
 
-    print('{}\t{}'.format(id, err))
-    try:
-        fig,ax = plt.subplots(2)
-        ax[0].plot(true_y)
-        ax[0].plot(pred_y)
-        ax[0].set_title('case='+str(id))
-        
-        ax[1].plot(case_p[:,0],label='propo')
-        ax[1].plot(case_r[:,0],label='remi')
-        plt.legend()
-        plt.show()
-    except:
-        print('case '+ str(id) +' empty ')
 
-PE_sum = PE_sum[1:]
-error = error[1:]
 Ytrue = Ytrue[1:]
 Ypred = Ypred[1:]
-print('RMSE:', np.sqrt(np.nansum(np.power(error,2))/len(error)))
-print('MDAPE (%):', np.median(np.abs(PE_sum))*100)
-print('MDPE (%):', np.median(PE_sum)*100)
-print('std (%):', np.std(PE_sum)*100)
 
-if cnt_err > 0:
-    print("Mean test error: {}".format(sum_err / cnt_err))
+
+MDPE_BIS /= sample_nb
+MDAPE_BIS /= sample_nb
+RMSE_BIS = np.mean(RMSE_list_BIS)
+
+SD_MDPE_BIS = np.sqrt(SD_MDPE_BIS)
+SD_MDAPE_BIS = np.sqrt(SD_MDAPE_BIS)
+SD_MDPE_BIS /= np.sqrt(sample_nb)
+SD_MDAPE_BIS /= np.sqrt(sample_nb)
+SD_RMSE_BIS = np.std(RMSE_list_BIS)
+
+print("                 ______   BIS results   ______")
+print( "     MDPE      &       MDAPE      &       RMSE       ")
+
+print( "$" + str(round(MDPE_BIS,2)) + " \pm " + str(round(SD_MDPE_BIS,2) ) 
+      + "$ & $" + str(round(MDAPE_BIS,2)) + " \pm " + str(round(SD_MDAPE_BIS,2)) 
+      + "$ & $" + str(round(RMSE_BIS,2)) + " \pm " + str(round(SD_RMSE_BIS,2))+ "$")
 
 #%%plot function
 from bokeh.plotting import figure, show

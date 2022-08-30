@@ -247,8 +247,8 @@ for caseid in Patients_test['caseid'].unique():
     sex = int(Patient_df['sex'][0])
     
     
-    v1_p, Ap = PropoModel('Schnider', age, sex, weight, height)
-    v1_r, Ar = RemiModel('Minto', age, sex, weight, height)
+    v1_p, Ap = PropoModel('Eleveld', age, sex, weight, height)
+    v1_r, Ar = RemiModel('Eleveld', age, sex, weight, height)
     
     Bp = np.zeros((6,1))
     Bp[0,0] = 1 /v1_p

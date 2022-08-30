@@ -5,7 +5,7 @@ Created on Wed May 18 08:47:45 2022
 
 @author: aubouinb
 """
-"""Script to apply machine learning techniques on vitalDB dataset with the objective to detect anomalous situations"""
+"""Script to use regression technique in order to fit the pharmacodynamic of the Propofol/Remifentanil effect"""
 
 import pickle
 import numpy as np
@@ -37,6 +37,19 @@ Patients_test = Patients_test[::step]
 Patients_train = Patients_train[Patients_train['full']==0]
 Patients_test = Patients_test[Patients_test['full']==0]
 
+# Patients_train.insert(len(Patients_train.columns),"train_set", 0)
+
+# id_train = Patients_train['caseid'].unique()
+# id_train = np.random.permutation(id_train)
+# id_split = np.array_split(id_train, 5)
+
+# set_int = 0
+# for i in  id_train:
+#     for j in range(len(id_split)):
+#         if i in id_split[j]:
+#             set_int = j
+#             break
+#     Patients_train.loc[Patients_train['caseid']==i, "train_set"] = set_int * np.ones((len(Patients_train[Patients_train['caseid']==i])))
 
 #%% Model based Regressions
 X_col = ['age', 'sex', 'height', 'weight', 'bmi', 'MAP_base_case', 'Ce_Prop', 'Ce_Rem'] + [('Cp_Prop_' + str(i+1)) for i in range(10)] + [('Cp_Rem_' + str(i+1)) for i in range(10)]
@@ -45,7 +58,7 @@ Patients_train = Patients_train[X_col + ['caseid','BIS','MAP','train_set']].drop
 Patients_test = Patients_test[X_col + ['caseid','BIS','MAP']].dropna()
 
 
-name_rg = 'ElasticNet'
+name_rg = 'SVR'
 regressors = {}
 
 
@@ -68,13 +81,16 @@ for y_col in ['BIS', 'MAP']: #
     except: #Otherwhise train the regressors and save it
         Y_train = Patients_train[y_col]
         if name_rg=='ElasticNet':
-            X_train = PolynomialFeatures(degree=2, include_bias=False).fit_transform(Patients_train[X_col].values)   
+            poly_degree = 1
+            pca_bool = False
+            X_train = PolynomialFeatures(degree=poly_degree, include_bias=False).fit_transform(Patients_train[X_col].values)   
             scaler = StandardScaler()
             X_train = scaler.fit_transform(X_train) 
-            pca = PCA()#n_components=4)
-            X_train = pca.fit_transform(X_train)
-            plt.plot(pca.explained_variance_ratio_,'-o')
-            X_train = X_train[:,0:20]
+            if pca_bool:
+                pca = PCA()#n_components=4)
+                X_train = pca.fit_transform(X_train)
+                plt.plot(pca.explained_variance_ratio_,'-o')
+                X_train = X_train[:,0:20]
         elif name_rg=='KernelRidge'  or name_rg=='SVR' or name_rg=='MLPRegressor':
             X_train = Patients_train[X_col].values
             scaler = StandardScaler()
@@ -124,16 +140,17 @@ for y_col in ['BIS', 'MAP']: #
     #--------------test performances on test cases-------------
     
     if name_rg=='ElasticNet':
-        X_train = PolynomialFeatures(degree=2, include_bias=False).fit_transform(Patients_train[X_col].values)
+        X_train = PolynomialFeatures(degree=poly_degree, include_bias=False).fit_transform(Patients_train[X_col].values)
         scaler = StandardScaler()
         scaler.fit(X_train) 
         pca = PCA()#n_components=4)
         pca.fit(X_train)
         
-        X_test = PolynomialFeatures(degree=2, include_bias=False).fit_transform(Patients_test[X_col].values)
+        X_test = PolynomialFeatures(degree=poly_degree, include_bias=False).fit_transform(Patients_test[X_col].values)
         X_test = scaler.transform(X_test)
-        X_test = pca.transform(X_test)
-        X_test = X_test[:,0:20]
+        if pca_bool:
+            X_test = pca.transform(X_test)
+            X_test = X_test[:,0:20]
         
         y_predicted = rg.predict(X_test)
         
@@ -167,10 +184,11 @@ for y_col in ['BIS', 'MAP']: #
     
     #-----------------test performances on train cases--------------------
     if name_rg=='ElasticNet':
-        X_train = PolynomialFeatures(degree=2, include_bias=False).fit_transform(Patients_train[X_col].values)
+        X_train = PolynomialFeatures(degree=poly_degree, include_bias=False).fit_transform(Patients_train[X_col].values)
         X_train = scaler.transform(X_train)
-        X_train = pca.transform(X_train)
-        X_train = X_train[:,0:20]
+        if pca_bool:
+            X_train = pca.transform(X_train)
+            X_train = X_train[:,0:20]
         
         y_predicted_train = rg.predict(X_train)
         
@@ -194,10 +212,9 @@ for y_col in ['BIS', 'MAP']: #
         Train_data['pred_MAP'] = y_predicted_train  
 
 print('     ***-----------------' + name_rg + '-----------------***')
-print("\n \n")
 print("\n                 ------ Test Results ------")
 compute_metrics(Test_data)
-print("\n                 ------ Train Results ------")
+print("\n\n                 ------ Train Results ------")
 compute_metrics(Train_data)
 plot_results(Test_data, Train_data)
 

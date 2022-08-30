@@ -40,9 +40,12 @@ def compute_metrics(data):
         case_length = len(case_data)
         PE_BIS = 100 * (case_data['true_BIS'].values - case_data['pred_BIS'].values)/case_data['true_BIS'].values
         PE_MAP = 100 * (case_data['true_MAP'].values - case_data['pred_MAP'].values)/case_data['true_MAP'].values
+        
         MDPE_BIS += case_length * np.median(PE_BIS)
         MDPE_MAP += case_length *  np.median(PE_MAP)
+        
         MDAPE_BIS += case_length *  np.median(np.abs(PE_BIS))
+        # print(str(case) + ' :  ' + str(np.median(np.abs(PE_BIS))))
         MDAPE_MAP += case_length *  np.median(np.abs(PE_MAP))
         
         efficiency_case = 4*int(case_length/2)/(np.pi * case_length)
@@ -141,7 +144,16 @@ def plot_results(data, data_train = pd.DataFrame()):
     fig3.x_range = Range1d(y_true_test.min(), y_true_test.max())
     fig3.y_range = Range1d(y_true_test.min(), y_true_test.max())
     
-    layout = row(column(fig1,fig2),fig3)
+    
+    fig4 = figure(plot_width=900, plot_height=450, title="Trained fit")
+    if train:
+        fig4 = figure(plot_width=900, plot_height=450, title = "Data (blue) Vs Fitted data (red)")
+        fig4.line(range(0,len(y_true_train)), y_true_train, line_color='navy', legend_label="y traint rue")
+        fig4.line(range(0,len(y_pred_train)), y_pred_train, line_color='red', legend_label="y train predicted")
+        fig4.xaxis.axis_label = "time [s]"
+        fig4.yaxis.axis_label = "y"
+    
+    layout = row(column(fig1,fig2),column(fig3, fig4))
     show(layout)
     
     y_true_test = data["true_MAP"].values
@@ -176,5 +188,13 @@ def plot_results(data, data_train = pd.DataFrame()):
     fig3.x_range = Range1d(y_true_test.min(), y_true_test.max())
     fig3.y_range = Range1d(y_true_test.min(), y_true_test.max())
     
-    layout = row(column(fig1,fig2),fig3)
+    fig4 = figure(plot_width=900, plot_height=450, title="Trained fit")
+    if train:
+        fig4 = figure(plot_width=900, plot_height=450, title = "Data (blue) Vs Fitted data (red)")
+        fig4.line(range(0,len(y_true_train)), y_true_train, line_color='navy', legend_label="y traint rue")
+        fig4.line(range(0,len(y_pred_train)), y_pred_train, line_color='red', legend_label="y train predicted")
+        fig4.xaxis.axis_label = "time [s]"
+        fig4.yaxis.axis_label = "y"
+    
+    layout = row(column(fig1,fig2),column(fig3, fig4))
     show(layout)

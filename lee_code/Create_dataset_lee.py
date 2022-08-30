@@ -101,7 +101,7 @@ Patients_test.to_csv("./data.csv", index = False)
 
 #%% Preprocessing the data
 # parameters
-timepoints = 60
+timepoints = 180
 cache_path = "./cache_perso.var"
 
 # generate sequence data
