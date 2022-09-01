@@ -65,7 +65,7 @@ SD_MDPE_BIS = 0
 SD_MDAPE_BIS = 0
     
 RMSE_list_BIS = []
-
+case_length_list = []
 
 
 print('id\ttesting_err')
@@ -106,6 +106,7 @@ for id in test_p.keys():
     
     RMSE_BIS = np.sqrt(np.mean((100*(true_y - pred_y))**2))
     RMSE_list_BIS.append(RMSE_BIS)
+    case_length_list.append(case_len)
     
     Ytrue = np.concatenate((Ytrue, true_y*100), axis=0)
     Ypred = np.concatenate((Ypred, (pred_y)*100), axis=0)
@@ -122,20 +123,18 @@ Ypred = Ypred[1:]
 
 MDPE_BIS /= sample_nb
 MDAPE_BIS /= sample_nb
-RMSE_BIS = np.mean(RMSE_list_BIS)
+RMSE_BIS = np.sum([RMSE_list_BIS[i] * case_length_list[i] for i in range(len(RMSE_list_BIS))]) / sample_nb
 
-SD_MDPE_BIS = np.sqrt(SD_MDPE_BIS)
-SD_MDAPE_BIS = np.sqrt(SD_MDAPE_BIS)
-SD_MDPE_BIS /= np.sqrt(sample_nb)
-SD_MDAPE_BIS /= np.sqrt(sample_nb)
-SD_RMSE_BIS = np.std(RMSE_list_BIS)
+SD_MDPE_BIS = np.sqrt(SD_MDPE_BIS / sample_nb)
+SD_MDAPE_BIS = np.sqrt(SD_MDAPE_BIS / sample_nb)
+SD_RMSE_BIS = np.sqrt(np.sum([(RMSE_list_BIS[i] - RMSE_BIS)**2 * case_length_list[i] for i in range(len(RMSE_list_BIS)) ]) / sample_nb)
 
 print("                 ______   BIS results   ______")
 print( "     MDPE      &       MDAPE      &       RMSE       ")
 
-print( "$" + str(round(MDPE_BIS,2)) + " \pm " + str(round(SD_MDPE_BIS,2) ) 
-      + "$ & $" + str(round(MDAPE_BIS,2)) + " \pm " + str(round(SD_MDAPE_BIS,2)) 
-      + "$ & $" + str(round(RMSE_BIS,2)) + " \pm " + str(round(SD_RMSE_BIS,2))+ "$")
+print( "$" + str(round(MDPE_BIS, 1)) + " \pm " + str(round(SD_MDPE_BIS, 1) ) 
+      + "$ & $" + str(round(MDAPE_BIS, 1)) + " \pm " + str(round(SD_MDAPE_BIS, 1)) 
+      + "$ & $" + str(round(RMSE_BIS, 1)) + " \pm " + str(round(SD_RMSE_BIS, 1))+ "$")
 
 #%%plot function
 from bokeh.plotting import figure, show

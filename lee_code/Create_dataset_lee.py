@@ -66,8 +66,15 @@ nb_points = 0
 for caseid in id_test:
     print(caseid)
     Patient_df = cases[cases['caseid']==caseid]
-    window_size = 100 # Mean window
+    
     Patient_df = Patient_df.copy()
+    Patient_df['BIS'].replace(0, np.nan, inplace=True)
+    Patient_df['MAP'].replace(0, np.nan, inplace=True)
+    Patient_df['HR'].replace(0, np.nan, inplace=True)
+    Patient_df = Patient_df.fillna(method='ffill')
+    
+    window_size = 300 # Mean window
+    
     Patient_df['BIS'] = Patient_df['BIS'].rolling(window_size, min_periods=5, center=True).mean().dropna()
     Patient_df['MAP'] = Patient_df['MAP'].rolling(window_size, min_periods=5, center=True).mean().dropna()
     Patient_df['HR'] = Patient_df['HR'].rolling(window_size, min_periods=5, center=True).mean().dropna()

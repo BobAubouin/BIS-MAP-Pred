@@ -26,14 +26,17 @@ def compute_metrics(data):
     MDAPE_BIS = 0
     MDPE_MAP = 0
     MDAPE_MAP = 0
+    RMSE_BIS = 0
+    RMSE_MAP = 0
     
     SD_MDPE_BIS = 0
     SD_MDAPE_BIS = 0
     SD_MDPE_MAP = 0
     SD_MDAPE_MAP = 0
     
-    RMSE_list_BIS = []
-    RMSE_list_MAP = []
+    RMSE_BIS_list = []
+    RMSE_MAP_list = []
+    case_length_list = []
     
     for case in data['case_id'].unique():
         case_data = data[data['case_id']==case]
@@ -56,12 +59,15 @@ def compute_metrics(data):
         SD_MDAPE_MAP += case_length * np.var(np.abs(PE_MAP)) / efficiency_case
         
         
-        RMSE_BIS = np.sqrt(np.mean((case_data['true_BIS'].values - case_data['pred_BIS'].values)**2))
-        RMSE_MAP = np.sqrt(np.mean((case_data['true_MAP'].values - case_data['pred_MAP'].values)**2))
+        RMSE_bis = np.sqrt(np.mean((case_data['true_BIS'].values - case_data['pred_BIS'].values)**2))
+        RMSE_map = np.sqrt(np.mean((case_data['true_MAP'].values - case_data['pred_MAP'].values)**2))
         
-        RMSE_list_BIS.append(RMSE_BIS)
-        RMSE_list_MAP.append(RMSE_MAP)
+        RMSE_BIS += case_length * RMSE_bis
+        RMSE_MAP += case_length * RMSE_map
         
+        RMSE_BIS_list.append(RMSE_bis)
+        RMSE_MAP_list.append(RMSE_map)
+        case_length_list.append(case_length)
         
     sample_nb = len(data)
     
@@ -69,37 +75,34 @@ def compute_metrics(data):
     MDPE_MAP /= sample_nb
     MDAPE_BIS /= sample_nb
     MDAPE_MAP /= sample_nb
-    RMSE_BIS = np.mean(RMSE_list_BIS)
-    RMSE_MAP = np.mean(RMSE_list_MAP)   
+    RMSE_BIS /= sample_nb
+    RMSE_MAP /= sample_nb
 
 
     
-    SD_MDPE_BIS = np.sqrt(SD_MDPE_BIS)
-    SD_MDPE_MAP = np.sqrt(SD_MDPE_MAP)
-    SD_MDAPE_BIS = np.sqrt(SD_MDAPE_BIS)
-    SD_MDAPE_MAP = np.sqrt(SD_MDAPE_MAP)
+    SD_MDPE_BIS = np.sqrt(SD_MDPE_BIS / sample_nb)
+    SD_MDPE_MAP = np.sqrt(SD_MDPE_MAP / sample_nb)
+    SD_MDAPE_BIS = np.sqrt(SD_MDAPE_BIS / sample_nb)
+    SD_MDAPE_MAP = np.sqrt(SD_MDAPE_MAP / sample_nb)
     
-    SD_MDPE_BIS /= np.sqrt(sample_nb)
-    SD_MDPE_MAP /= np.sqrt(sample_nb)
-    SD_MDAPE_BIS /= np.sqrt(sample_nb)
-    SD_MDAPE_MAP /= np.sqrt(sample_nb)
-    SD_RMSE_BIS = np.std(RMSE_list_BIS)
-    SD_RMSE_MAP = np.std(RMSE_list_MAP)
+
+    SD_RMSE_BIS = np.sqrt(np.sum([(RMSE_BIS_list[i] - RMSE_BIS)**2 * case_length_list[i] for i in range(len(RMSE_BIS_list)) ]) / sample_nb)
+    SD_RMSE_MAP = np.sqrt(np.sum([(RMSE_MAP_list[i] - RMSE_MAP)**2 * case_length_list[i] for i in range(len(RMSE_MAP_list)) ]) / sample_nb)
     
     
     print("                 ______   BIS results   ______")
     print( "     MDPE      &       MDAPE      &       RMSE       ")
 
-    print( "$" + str(round(MDPE_BIS,2)) + " \pm " + str(round(SD_MDPE_BIS,2) ) 
-          + "$ & $" + str(round(MDAPE_BIS,2)) + " \pm " + str(round(SD_MDAPE_BIS,2)) 
-          + "$ & $" + str(round(RMSE_BIS,2)) + " \pm " + str(round(SD_RMSE_BIS,2))+ "$")
+    print( "$" + str(round(MDPE_BIS,1)) + " \pm " + str(round(SD_MDPE_BIS,1) ) 
+          + "$ & $" + str(round(MDAPE_BIS,1)) + " \pm " + str(round(SD_MDAPE_BIS,1)) 
+          + "$ & $" + str(round(RMSE_BIS,1)) + " \pm " + str(round(SD_RMSE_BIS,1))+ "$")
 
     print("\n               ______   MAP results   ______")
     print( "     MDPE      &       MDAPE      &       RMSE       ")
 
-    print("$" + str(round(MDPE_MAP,2)) + " \pm " + str(round(SD_MDPE_MAP,2)) 
-          + "$ & $" + str(round(MDAPE_MAP,2)) + " \pm " + str(round(SD_MDAPE_MAP,2)) 
-          + "$ & $" + str(round(RMSE_MAP,2)) + " \pm " + str(round(SD_RMSE_MAP,2))+ "$")
+    print("$" + str(round(MDPE_MAP,1)) + " \pm " + str(round(SD_MDPE_MAP,1)) 
+          + "$ & $" + str(round(MDAPE_MAP,1)) + " \pm " + str(round(SD_MDAPE_MAP,1)) 
+          + "$ & $" + str(round(RMSE_MAP,1)) + " \pm " + str(round(SD_RMSE_MAP,1))+ "$")
 
     BIS_res = [MDPE_BIS, SD_MDPE_BIS, MDAPE_BIS, SD_MDAPE_BIS]
     MAP_res = [MDPE_MAP, SD_MDPE_MAP, MDAPE_MAP, SD_MDAPE_MAP]

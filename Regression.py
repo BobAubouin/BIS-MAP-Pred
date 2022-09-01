@@ -52,13 +52,19 @@ Patients_test = Patients_test[Patients_test['full']==0]
 #     Patients_train.loc[Patients_train['caseid']==i, "train_set"] = set_int * np.ones((len(Patients_train[Patients_train['caseid']==i])))
 
 #%% Model based Regressions
-X_col = ['age', 'sex', 'height', 'weight', 'bmi', 'MAP_base_case', 'Ce_Prop', 'Ce_Rem'] + [('Cp_Prop_' + str(i+1)) for i in range(10)] + [('Cp_Rem_' + str(i+1)) for i in range(10)]
+
+feature = 'A'
+#feat_A
+if feature=='A':
+    X_col = ['age', 'sex', 'height', 'weight', 'bmi', 'lbm', 'MAP_base_case', 'Ce_Prop', 'Ce_Rem', 'Ce_Prop_MAP', 'Ce_Rem_MAP']
+elif feature == 'B':
+    X_col = ['age', 'sex', 'height', 'weight', 'bmi', 'lbm', 'MAP_base_case', 'Ce_Prop', 'Ce_Rem'] + [('Cp_Prop_' + str(i+1)) for i in range(10)] + [('Cp_Rem_' + str(i+1)) for i in range(10)]
 
 Patients_train = Patients_train[X_col + ['caseid','BIS','MAP','train_set']].dropna()
 Patients_test = Patients_test[X_col + ['caseid','BIS','MAP']].dropna()
 
 
-name_rg = 'SVR'
+name_rg = 'MLPRegressor'
 regressors = {}
 
 
@@ -68,12 +74,12 @@ Train_data['case_id'] = Patients_train['caseid']
 Test_data['case_id'] = Patients_test['caseid']
 
 i = 0
+filename = './saved_reg/reg_' + name_rg + '_lbm_feat_' + feature + '.pkl'
 for y_col in ['BIS', 'MAP']: #
 
     #--------------Training-------------
  
     try: #Try to load trained regressor
-        filename = './saved_reg/reg_' + name_rg + '.pkl'
         regressors = pickle.load(open(filename, 'rb'))
         rg = regressors[y_col]
         print("load ok")
@@ -115,25 +121,22 @@ for y_col in ['BIS', 'MAP']: #
             
         # ---SVR----
         elif name_rg=='SVR':
-            rg = SVR(verbose=3, shrinking=False)# kernel = 'poly', 'rbf'; 'linear'
-            Gridsearch = GridSearchCV(rg, {'kernel': ['rbf'], 'C' : np.logspace(1,3,3),
-                                           'gamma' : np.logspace(-1,1,3) , 'epsilon' : np.logspace(-2,1,3)}, #np.logspace(-2,1,3)
+            rg = SVR(verbose=3, shrinking=False, cache_size=1000)# kernel = 'poly', 'rbf'; 'linear'
+            Gridsearch = GridSearchCV(rg, {'kernel': ['rbf'], 'C' : [0.1],
+                                           'gamma' : np.logspace(-1,3,5) , 'epsilon' : np.logspace(-3,1,5)}, #np.logspace(-2,1,3)
                                       n_jobs = 8, cv = ps, scoring='r2', verbose=4)
 
             Gridsearch.fit(X_train[:],Y_train[:])
         
         elif name_rg=='MLPRegressor':
             rg = MLPRegressor(learning_rate = 'adaptive', max_iter = 1000)
-            Gridsearch = GridSearchCV(rg, {'hidden_layer_sizes': [4, 8, 16, 32, 64], 'alpha': np.logspace(-4,-2,3),
+            Gridsearch = GridSearchCV(rg, {'hidden_layer_sizes': [64, 128, 256, 512], 'alpha': np.logspace(-4,-2,3),
                                            'activation': ('tanh','relu')})
             Gridsearch.fit(X_train, Y_train/100)
             
         print(Gridsearch.best_params_)
         
         rg = Gridsearch.best_estimator_
-        name_rg = str(rg)
-        name_rg = name_rg[:name_rg.find('(')]
-        filename = './saved_reg/reg_' + name_rg + '.pkl'
         regressors[y_col] = rg
         pickle.dump(regressors, open(filename, 'wb'))
     

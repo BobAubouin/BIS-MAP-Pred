@@ -12,10 +12,18 @@ import control
 from metrics_functions import compute_metrics, plot_results
 import matplotlib.pyplot as plt
 
+# Model to test
+
+model = 'Eleveld'
+# model = 'Schnider - Minto'
+# model = 'Marsh - Minto'
+
+
+
 #%% functions
 
 def PropoModel(model, age, sex, weight, height):
-    if model == 'Schnider':      
+    if model == 'Schnider - Minto':      
         
         if sex == 1: # homme
             lbm = 1.1 * weight - 128 * (weight / height) ** 2
@@ -33,7 +41,7 @@ def PropoModel(model, age, sex, weight, height):
         # drug amount transfer rates [1/min]
         ke0 = 0.456
         k1e = ke0
-    elif model == 'Marsh':
+    elif model == 'Marsh - Minto':
         
         # Volume of the compartments [l]
         v1 = 0.228 * weight
@@ -103,7 +111,7 @@ def PropoModel(model, age, sex, weight, height):
     return v1, A
 
 def RemiModel(model, age, sex, weight, height):
-    if model=='Minto':
+    if model == 'Marsh - Minto' or model == 'Schnider - Minto':
         if sex == 1: # homme
             lbm = 1.1 * weight - 128 * (weight / height) ** 2
         else : #femme
@@ -247,8 +255,8 @@ for caseid in Patients_test['caseid'].unique():
     sex = int(Patient_df['sex'][0])
     
     
-    v1_p, Ap = PropoModel('Eleveld', age, sex, weight, height)
-    v1_r, Ar = RemiModel('Eleveld', age, sex, weight, height)
+    v1_p, Ap = PropoModel(model, age, sex, weight, height)
+    v1_r, Ar = RemiModel(model, age, sex, weight, height)
     
     Bp = np.zeros((6,1))
     Bp[0,0] = 1 /v1_p
@@ -298,4 +306,3 @@ compute_metrics(Output_df)
 #plot_results(Output_df) 
 
 Pe = 100 * (Output_df['true_BIS'].values - Output_df['pred_BIS'].values)/Output_df['true_BIS'].values
-print(np.median(np.abs(Pe)))

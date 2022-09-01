@@ -34,7 +34,7 @@ caselist = [46, 70, 101, 167, 172, 218, 221, 247, 268, 345, 353, 405, 447, 533, 
 
 id_train, id_test = train_test_split(caselist, test_size=0.3, random_state=14) #split between test and train
 id_train = np.random.permutation(id_train)
-id_split = np.array_split(id_train, 5) #split train set in 5 set for cross validation
+id_split = np.array_split(id_train, 3) #split train set in 5 set for cross validation
 
 
 
@@ -76,9 +76,19 @@ win_vec = np.ones(windows_Cp)
 for caseid in cases['caseid'].unique():
     print(caseid)
     Patient_df = cases[cases['caseid']==caseid]
-    window_size = 100 # Mean window
     Patient_df = Patient_df.copy()
+    Patient_df['BIS'].replace(0, np.nan, inplace=True)
+    Patient_df['MAP'].replace(0, np.nan, inplace=True)
+    Patient_df['HR'].replace(0, np.nan, inplace=True)
+    Patient_df = Patient_df.fillna(method='ffill')
+    window_size = 300 # Mean window
+    
+    fig, ax = plt.subplots()
+    Patient_df['BIS'].plot(ax = ax)
     Patient_df.loc[:,'BIS'] = Patient_df['BIS'].rolling(window_size, min_periods=5, center=True).mean().dropna()
+    Patient_df['BIS'].plot(ax = ax)
+    plt.title('case = ' + str(caseid))
+    plt.show()
     Patient_df.loc[:,'MAP'] = Patient_df['MAP'].rolling(window_size, min_periods=5, center=True).mean().dropna()
     Patient_df.loc[:,'HR'] = Patient_df['HR'].rolling(window_size, min_periods=5, center=True).mean().dropna()
     
@@ -87,37 +97,44 @@ for caseid in cases['caseid'].unique():
     Patient_df.insert(len(Patient_df.columns),"age", float(perso_data[perso_data['caseid']==str(caseid)]['age']))
     sex = int(perso_data[perso_data['caseid']==str(caseid)]['sex']=='M') # F = 0, M = 1
     Patient_df.insert(len(Patient_df.columns),"sex", sex)
-    Patient_df.insert(len(Patient_df.columns),"weight", float(perso_data[perso_data['caseid']==str(caseid)]['weight']))
-    Patient_df.insert(len(Patient_df.columns),"height", float(perso_data[perso_data['caseid']==str(caseid)]['height']))
+    weight = float(perso_data[perso_data['caseid']==str(caseid)]['weight'])
+    Patient_df.insert(len(Patient_df.columns),"weight", weight)
+    height = float(perso_data[perso_data['caseid']==str(caseid)]['height'])
+    Patient_df.insert(len(Patient_df.columns),"height", height)
     Patient_df.insert(len(Patient_df.columns),"bmi", float(perso_data[perso_data['caseid']==str(caseid)]['bmi']))
+    
+    if sex == 1: # homme
+        lbm = 1.1 * weight - 128 * (weight / height) ** 2
+    else : #femme
+        lbm = 1.07 * weight - 148 * (weight / height) ** 2
+    Patient_df.insert(len(Patient_df.columns),"lbm", lbm)
     
     Map_base_case = Patient_df['NI_MAP'].fillna(method='bfill')[0]
     Patient_df.insert(len(Patient_df.columns),"MAP_base_case", Map_base_case)
     
-    # Ncase = len(Patient_df['BIS'])
-    # weight = float(perso_data[perso_data['caseid']==str(caseid)]['weight'])
-    # age = float(perso_data[perso_data['caseid']==str(caseid)]['age'])
-    # height = float(perso_data[perso_data['caseid']==str(caseid)]['height'])
-    # George = Patient(age, height, weight, sex, model = 'Eleveld2', Te = 1, MAP_base = Map_base_case)
-    # Cp_Prop = np.zeros(Ncase)
-    # Cp_Rem = np.zeros(Ncase)
-    # Ce_Prop = np.zeros(Ncase)
-    # Ce_Rem = np.zeros(Ncase)
-    # Patient_df['Propofol'].fillna(method='ffill')
-    # Patient_df['Remifentanil'].fillna(method='ffill')
-    # Patient_df['Propofol'].fillna(0,inplace=True)
-    # Patient_df['Remifentanil'].fillna(0,inplace=True)
-    # for j in range(Ncase-1):
-    #     BIS, CO, MAP = George.one_step(uP = Patient_df['Propofol'][j]*20/3600, uR = Patient_df['Remifentanil'][j]*20/3600, noise = False)
-    #     Cp_Prop[j+1] = George.Cp_blood[0]
-    #     Cp_Rem[j+1]  = George.Cr_blood[0]
-    #     Ce_Prop[j+1]  = George.Cp_ES[0]
-    #     Ce_Rem[j+1]  = George.Cr_ES[0]      
-    # #Patient = Patient.dropna().reset_index(drop=True) # Remove Nan
-    # Patient_df = Patient_df.fillna(method='ffill')
     
-    # Patient_df["Ce_Prop"] = Ce_Prop
-    # Patient_df["Ce_Rem"] = Ce_Rem
+    
+    Ncase = len(Patient_df['BIS'])
+
+    Ce_Prop_MAP = np.zeros(Ncase)
+    Ce_Rem_MAP = np.zeros(Ncase)
+    ke_prop =  (0.0540 + 0.0695)/2 / 60 
+    ke_rem = 0.81 / 60 
+    dt = 1
+    for j in range(Ncase-1):
+        if not np.isnan(Patient_df.loc[j,"Cp_Prop"]):
+            Ce_Prop_MAP[j+1] = Ce_Prop_MAP[j] + dt * ke_prop * (Patient_df.loc[j,"Cp_Prop"] - Ce_Prop_MAP[j])
+        else:
+            Ce_Prop_MAP[j+1] = Ce_Prop_MAP[j] + dt * ke_prop * (0 - Ce_Prop_MAP[j])
+        if not np.isnan(Patient_df.loc[j,"Cp_Prop"]):    
+            Ce_Rem_MAP[j+1] = Ce_Rem_MAP[j] + dt * ke_rem * (Patient_df.loc[j,"Cp_Rem"] - Ce_Rem_MAP[j])
+        else:
+            Ce_Rem_MAP[j+1] = Ce_Rem_MAP[j] + dt * ke_rem * (0 - Ce_Rem_MAP[j])
+   
+    
+
+    Patient_df.insert(len(Patient_df.columns), "Ce_Prop_MAP", Ce_Prop_MAP)
+    Patient_df.insert(len(Patient_df.columns), "Ce_Rem_MAP", Ce_Prop_MAP)
     
     Patient_df.loc[:,"Ce_Prop"] = Patient_df["Ce_Prop"].fillna(value = 0)
     Patient_df.loc[:,"Ce_Rem"] = Patient_df["Ce_Rem"].fillna(value = 0)
