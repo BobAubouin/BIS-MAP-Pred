@@ -19,7 +19,7 @@ from sklearn.kernel_ridge import KernelRidge
 from sklearn.linear_model import ElasticNet, TheilSenRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import GridSearchCV
-from metrics_functions import compute_metrics, plot_results
+from metrics_functions import compute_metrics, plot_results, plot_case
 
 
 #%% Load dataset
@@ -33,6 +33,8 @@ step = 30 # Undersampling step
 Patients_train = Patients_train[::step]
 
 Patients_test = Patients_test[::step]
+
+Patients_test_full = Patients_test.copy()
 
 Patients_train = Patients_train[Patients_train['full']==0]
 Patients_test = Patients_test[Patients_test['full']==0]
@@ -53,7 +55,7 @@ Patients_test = Patients_test[Patients_test['full']==0]
 
 #%% Model based Regressions
 
-feature = 'B'
+feature = 'A'
 #feat_A
 if feature=='A':
     X_col = ['age', 'sex', 'height', 'weight', 'bmi', 'lbm', 'MAP_base_case', 'Ce_Prop', 'Ce_Rem', 'Ce_Prop_MAP', 'Ce_Rem_MAP']
@@ -61,14 +63,18 @@ elif feature == 'B':
     X_col = ['age', 'sex', 'height', 'weight', 'bmi', 'lbm', 'MAP_base_case', 'Ce_Prop', 'Ce_Rem'] + [('Cp_Prop_' + str(i+1)) for i in range(10)] + [('Cp_Rem_' + str(i+1)) for i in range(10)]
 
 Patients_train = Patients_train[X_col + ['caseid','BIS','MAP','train_set']].dropna()
-Patients_test = Patients_test[X_col + ['caseid','BIS','MAP']].dropna()
+Patients_test = Patients_test[X_col + ['caseid','BIS','MAP','Time']].dropna()
 
 
-name_rg = 'TheilSenRegressor'
+name_rg = 'SVR'
 poly_degree = 1
 pca_bool = False
 regressors = {}
 
+try:
+    results = pd.read_csv("./results.csv", index_col=0)
+except:
+    results = Patients_test[['Time','caseid','BIS','MAP']]
 
 Train_data = pd.DataFrame()
 Test_data = pd.DataFrame()
@@ -130,7 +136,7 @@ for y_col in ['BIS', 'MAP']: #
         
         elif name_rg=='MLPRegressor':
             rg = MLPRegressor(learning_rate = 'adaptive', max_iter = 1000)
-            Gridsearch = GridSearchCV(rg, {'hidden_layer_sizes': [128, 256, 512], 'alpha': np.logspace(-4,-2,3),
+            Gridsearch = GridSearchCV(rg, {'hidden_layer_sizes': [128, 256, 512], 'alpha': 10.0 ** -np.arange(1, 7),
                                            'activation': ('tanh','relu','logistic','identity')})
             Gridsearch.fit(X_train, Y_train/100)
         elif name_rg=='TheilSenRegressor':
@@ -182,14 +188,13 @@ for y_col in ['BIS', 'MAP']: #
         y_predicted = rg.predict(X_test)*100
         
         
-    if y_col=='BIS':
-        Test_data['true_BIS'] = Patients_test[y_col]
-        Test_data['pred_BIS'] = y_predicted
-    elif y_col=='MAP':
-        Test_data['true_MAP'] = Patients_test[y_col]
-        Test_data['pred_MAP'] = y_predicted  
+    Test_data['true_' + y_col] = Patients_test[y_col]
+    Test_data['pred_' + y_col] = y_predicted
     
+    col_name = 'pred_' + y_col + '_' + name_rg
+    results[col_name] = y_predicted
     #-----------------test performances on train cases--------------------
+    
     if name_rg=='ElasticNet' or name_rg=='TheilSenRegressor':
         X_train = PolynomialFeatures(degree=poly_degree, include_bias=False).fit_transform(Patients_train[X_col].values)
         X_train = scaler.transform(X_train)
@@ -211,12 +216,11 @@ for y_col in ['BIS', 'MAP']: #
         
         y_predicted_train = rg.predict(X_train)*100
         
-    if y_col=='BIS':
-        Train_data['true_BIS'] = Patients_train[y_col]
-        Train_data['pred_BIS'] = y_predicted_train
-    elif y_col=='MAP':
-        Train_data['true_MAP'] = Patients_train[y_col]
-        Train_data['pred_MAP'] = y_predicted_train  
+    Train_data['true_' + y_col] = Patients_train[y_col]
+    Train_data['pred_' + y_col] = y_predicted_train 
+
+
+results.to_csv("./results.csv")
 
 print('     ***-----------------' + name_rg + '-----------------***')
 print("\n                 ------ Test Results ------")
@@ -225,6 +229,7 @@ print("\n\n                 ------ Train Results ------")
 compute_metrics(Train_data)
 plot_results(Test_data, Train_data)
 
+plot_case(results, Patients_test_full, 101)
 
 
 

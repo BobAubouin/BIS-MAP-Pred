@@ -7,6 +7,7 @@ Created on Tue Aug 23 10:09:38 2022
 """
 import numpy as np
 import pandas as pd
+import bokeh
 from bokeh.plotting import figure, show
 from bokeh.layouts import row, column
 from bokeh.models import Range1d
@@ -112,7 +113,7 @@ def compute_metrics(data):
 
 
 def plot_results(data, data_train = pd.DataFrame()):
-    
+    """plot the result of the prediction with bokeh module"""
     y_true_test = data["true_BIS"].values
     y_pred_test = data["pred_BIS"].values
     if not data_train.empty:
@@ -197,7 +198,89 @@ def plot_results(data, data_train = pd.DataFrame()):
         fig4.line(range(0,len(y_true_train)), y_true_train, line_color='navy', legend_label="y traint rue")
         fig4.line(range(0,len(y_pred_train)), y_pred_train, line_color='red', legend_label="y train predicted")
         fig4.xaxis.axis_label = "time [s]"
-        fig4.yaxis.axis_label = "y"
+        fig4.yaxis.axis_label = "MAP (mmHg)"
     
     layout = row(column(fig1,fig2),column(fig3, fig4))
     show(layout)
+    
+
+def plot_case(Patient_pred, Patient_full, caseid):
+    case_pred = Patient_pred[Patient_pred['caseid']==caseid]
+    case_full = Patient_full[Patient_full['caseid']==caseid]
+
+   
+    columns_pred_BIS = [name for name in case_pred.columns if name[:8]=='pred_BIS']
+    columns_pred_MAP = [name for name in case_pred.columns if name[:8]=='pred_MAP']
+    
+    columns_pred_BIS_full = [name for name in case_full.columns if name[:8]=='pred_BIS']
+    columns_pred_MAP_full = [name for name in case_full.columns if name[:8]=='pred_MAP']
+    
+    color = list(bokeh.palettes.brewer['Dark2'][max(3,len(columns_pred_BIS)+1+len(columns_pred_BIS_full))])
+    
+    fig1 = figure(plot_width=900, plot_height=450, title = "Bispectral Index")
+    i=0
+    fig1.line(case_full['Time'].values, case_full['BIS'].values, line_color = color[i], legend_label="BIS")
+    
+    for name in columns_pred_BIS:
+        i+=1
+        fig1.line(case_pred['Time'].values, case_pred[name], legend_label=name[9:], line_color = color[i])
+        
+    for name in columns_pred_BIS_full:
+        i+=1
+        fig1.line(case_full['Time'].values, case_full[name], legend_label=name[9:], line_color = color[i])
+        
+    fig1.xaxis.axis_label = "time (s)"
+    fig1.yaxis.axis_label = "BIS (%)"
+
+
+    fig2 = figure(plot_width=900, plot_height=450, title = "Mean Arterial Pressure")
+    i=0
+    fig2.line(case_full['Time'].values, case_full['MAP'].values, line_color = color[i], legend_label="MAP")
+    for name in columns_pred_MAP:
+        i+=1
+        fig2.line(case_pred['Time'].values, case_pred[name], legend_label=name[9:], line_color = color[i])
+        
+    for name in columns_pred_MAP_full:
+        i+=1
+        fig2.line(case_full['Time'].values, case_full[name], legend_label=name[9:], line_color = color[i])
+        
+    fig2.xaxis.axis_label = "time (s)"
+    fig2.yaxis.axis_label = "MAP (mmHg)"
+
+
+    layout = row(column(fig1,fig2))
+    show(layout)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+    

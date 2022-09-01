@@ -80,16 +80,23 @@ for caseid in cases['caseid'].unique():
     Patient_df['BIS'].replace(0, np.nan, inplace=True)
     Patient_df['MAP'].replace(0, np.nan, inplace=True)
     Patient_df['HR'].replace(0, np.nan, inplace=True)
+    
+    #remove artefact in map measure
+    Patient_df.loc[abs(Patient_df['MAP']-np.nanmean(Patient_df['MAP'].values)) > 50, 'MAP'] = np.nan * np.ones((len(Patient_df.loc[abs(Patient_df['MAP']-np.nanmean(Patient_df['MAP'].values)) > 50, 'MAP'])))
+    
     Patient_df = Patient_df.fillna(method='ffill')
+    Patient_df['Propofol'].fillna(0,inplace=True)
+    Patient_df['Remifentanil'].fillna(0,inplace=True)
     window_size = 300 # Mean window
     
-    fig, ax = plt.subplots()
-    Patient_df['BIS'].plot(ax = ax)
+    # fig, ax = plt.subplots()
+    # Patient_df['MAP'].plot(ax = ax)
     Patient_df.loc[:,'BIS'] = Patient_df['BIS'].rolling(window_size, min_periods=5, center=True).mean().dropna()
-    Patient_df['BIS'].plot(ax = ax)
-    plt.title('case = ' + str(caseid))
-    plt.show()
+
     Patient_df.loc[:,'MAP'] = Patient_df['MAP'].rolling(window_size, min_periods=5, center=True).mean().dropna()
+    # Patient_df['MAP'].plot(ax = ax)
+    # plt.title('case = ' + str(caseid))
+    # plt.show()
     Patient_df.loc[:,'HR'] = Patient_df['HR'].rolling(window_size, min_periods=5, center=True).mean().dropna()
     
     nb_points += len(Patient_df['BIS'])
@@ -180,7 +187,7 @@ print("nb point train: " +str(len(Patients_train['BIS'])))
 print("nb point test: " +str(len(Patients_test['BIS'])))
 
 
-print_dist = True
+print_dist = False
 if print_dist:
     fig, axs = plt.subplots(2,2)
     Patients_test['age'].hist(label = "test", ax=axs[0,0])

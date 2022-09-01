@@ -230,14 +230,16 @@ def discretize(A,B,Te):
     return Ad, Bd
 
 #%% load data
-Patients_test = pd.read_csv("./Patients_train.csv", index_col=0)
-Patients_test['Propofol'].fillna(0,inplace=True)
-Patients_test['Remifentanil'].fillna(0,inplace=True)
+Patients_test = pd.read_csv("./Patients_test.csv", index_col=0)
+
 #%% Perform simulation
 
 Output_df = pd.DataFrame(columns=['case_id','true_BIS','pred_BIS','true_MAP','pred_MAP','full'])
 
 i = 0
+if 'pred_BIS_'+model not in Patients_test.columns:
+    Patients_test.insert(len(Patients_test.columns), 'pred_BIS_'+model, 0)
+    
 for caseid in Patients_test['caseid'].unique():
     print(caseid)
     
@@ -288,6 +290,10 @@ for caseid in Patients_test['caseid'].unique():
     
     Output_df = pd.concat([Output_df, Output_df_temp], ignore_index=True)
     
+    Patients_test.loc[Patients_test["caseid"]==caseid, 'pred_BIS_'+model] = Output_df_temp['pred_BIS'].values
+    Patients_test.loc[Patients_test["caseid"]==caseid, 'pred_MAP_'+model] = Output_df_temp['pred_MAP'].values
+    
+    
     if i%5==0:
         fig, ax = plt.subplots(2)
         ax[1].set_xlabel('caseid : ' + str(caseid))
@@ -300,9 +306,8 @@ for caseid in Patients_test['caseid'].unique():
     
 Output_df = Output_df[Output_df['full']==0]
 
+Patients_test.to_csv("./Patients_test.csv")
 #%% Analyse results
 
 compute_metrics(Output_df)
 #plot_results(Output_df) 
-
-Pe = 100 * (Output_df['true_BIS'].values - Output_df['pred_BIS'].values)/Output_df['true_BIS'].values
