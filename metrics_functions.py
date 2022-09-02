@@ -11,6 +11,9 @@ import bokeh
 from bokeh.plotting import figure, show
 from bokeh.layouts import row, column
 from bokeh.models import Range1d
+from bokeh.io import export_svg
+from matplotlib import pyplot as plt
+from matplotlib import cm
 
 
 def compute_metrics(data):
@@ -38,7 +41,10 @@ def compute_metrics(data):
     RMSE_BIS_list = []
     RMSE_MAP_list = []
     case_length_list = []
-    
+    rmse_max_bis = 0
+    rmse_min_bis = 1000
+    rmse_max_map = 0
+    rmse_min_map = 1000
     for case in data['case_id'].unique():
         case_data = data[data['case_id']==case]
         case_length = len(case_data)
@@ -70,6 +76,18 @@ def compute_metrics(data):
         RMSE_MAP_list.append(RMSE_map)
         case_length_list.append(case_length)
         
+        if RMSE_bis>rmse_max_bis:
+            case_rmse_max_bis = case
+            rmse_max_bis = RMSE_bis
+        if RMSE_bis<rmse_min_bis:
+            case_rmse_min_bis = case
+            rmse_min_bis = RMSE_bis
+        if RMSE_map>rmse_max_map:
+            case_rmse_max_map = case
+            rmse_max_map = RMSE_map
+        if RMSE_map<rmse_min_map:
+            case_rmse_min_map = case
+            rmse_min_map = RMSE_map
     sample_nb = len(data)
     
     MDPE_BIS /= sample_nb
@@ -92,7 +110,7 @@ def compute_metrics(data):
     
     
     print("                 ______   BIS results   ______")
-    print( "     MDPE      &       MDAPE      &       RMSE       ")
+    print( "     MDPE \t & \t MDAPE \t & \t RMSE       ")
 
     print( "$" + str(round(MDPE_BIS,1)) + " \pm " + str(round(SD_MDPE_BIS,1) ) 
           + "$ & $" + str(round(MDAPE_BIS,1)) + " \pm " + str(round(SD_MDAPE_BIS,1)) 
@@ -105,10 +123,8 @@ def compute_metrics(data):
           + "$ & $" + str(round(MDAPE_MAP,1)) + " \pm " + str(round(SD_MDAPE_MAP,1)) 
           + "$ & $" + str(round(RMSE_MAP,1)) + " \pm " + str(round(SD_RMSE_MAP,1))+ "$")
 
-    BIS_res = [MDPE_BIS, SD_MDPE_BIS, MDAPE_BIS, SD_MDAPE_BIS]
-    MAP_res = [MDPE_MAP, SD_MDPE_MAP, MDAPE_MAP, SD_MDAPE_MAP]
     
-    return BIS_res, MAP_res
+    return case_rmse_max_bis, case_rmse_min_bis, case_rmse_max_map, case_rmse_min_map
 
 
 
@@ -204,9 +220,30 @@ def plot_results(data, data_train = pd.DataFrame()):
     show(layout)
     
 
-def plot_case(Patient_pred, Patient_full, caseid):
-    case_pred = Patient_pred[Patient_pred['caseid']==caseid]
-    case_full = Patient_full[Patient_full['caseid']==caseid]
+def plot_one_fig(case_full, case_pred, output, columns_pred, columns_pred_full):
+    
+    color = list(bokeh.palettes.brewer['Dark2'][max(3,len(columns_pred)+1+len(columns_pred_full))])
+    
+    fig = figure(plot_width=900, plot_height=450, title = output + " for best case")
+    i=0
+    fig.line(case_full['Time'].values, case_full[output].values, line_color = color[i], legend_label="True " + output, line_width=2)
+    
+    for name in columns_pred:
+        i+=1
+        fig.line(case_pred['Time'].values, case_pred[name], legend_label=name[9:], line_color = color[i], line_width=2)
+        
+    for name in columns_pred_full:
+        i+=1
+        fig.line(case_full['Time'].values, case_full[name], legend_label=name[9:], line_color = color[i], line_width=2)
+        
+    fig.xaxis.axis_label = "time (s)"
+    fig.yaxis.axis_label = output + '(%)'*(output=='BIS') + '(mmHg)'*(output=='MAP')
+    return fig
+
+def plot_case(Patient_pred, Patient_full, caseid_min_bis, case_min_map, caseid_max_bis, caseid_max_map):
+    #case minimum
+    case_pred = Patient_pred[Patient_pred['caseid']==caseid_min_bis]
+    case_full = Patient_full[Patient_full['caseid']==caseid_min_bis]
 
    
     columns_pred_BIS = [name for name in case_pred.columns if name[:8]=='pred_BIS']
@@ -215,46 +252,69 @@ def plot_case(Patient_pred, Patient_full, caseid):
     columns_pred_BIS_full = [name for name in case_full.columns if name[:8]=='pred_BIS']
     columns_pred_MAP_full = [name for name in case_full.columns if name[:8]=='pred_MAP']
     
-    color = list(bokeh.palettes.brewer['Dark2'][max(3,len(columns_pred_BIS)+1+len(columns_pred_BIS_full))])
+    fig1 = plot_one_fig(case_full, case_pred, 'BIS', columns_pred_BIS, columns_pred_BIS_full)
     
-    fig1 = figure(plot_width=900, plot_height=450, title = "Bispectral Index")
-    i=0
-    fig1.line(case_full['Time'].values, case_full['BIS'].values, line_color = color[i], legend_label="BIS")
+    case_pred = Patient_pred[Patient_pred['caseid']==case_min_map]
+    case_full = Patient_full[Patient_full['caseid']==case_min_map]
+
+    fig2 = plot_one_fig(case_full, case_pred, 'MAP', columns_pred_MAP, columns_pred_MAP_full)
+
+    case_pred = Patient_pred[Patient_pred['caseid']==caseid_max_bis]
+    case_full = Patient_full[Patient_full['caseid']==caseid_max_bis]
+
     
-    for name in columns_pred_BIS:
-        i+=1
-        fig1.line(case_pred['Time'].values, case_pred[name], legend_label=name[9:], line_color = color[i])
-        
-    for name in columns_pred_BIS_full:
-        i+=1
-        fig1.line(case_full['Time'].values, case_full[name], legend_label=name[9:], line_color = color[i])
-        
-    fig1.xaxis.axis_label = "time (s)"
-    fig1.yaxis.axis_label = "BIS (%)"
+    fig3 = plot_one_fig(case_full, case_pred, 'BIS', columns_pred_BIS, columns_pred_BIS_full)
 
+    case_pred = Patient_pred[Patient_pred['caseid']==caseid_max_map]
+    case_full = Patient_full[Patient_full['caseid']==caseid_max_map]
 
-    fig2 = figure(plot_width=900, plot_height=450, title = "Mean Arterial Pressure")
-    i=0
-    fig2.line(case_full['Time'].values, case_full['MAP'].values, line_color = color[i], legend_label="MAP")
-    for name in columns_pred_MAP:
-        i+=1
-        fig2.line(case_pred['Time'].values, case_pred[name], legend_label=name[9:], line_color = color[i])
-        
-    for name in columns_pred_MAP_full:
-        i+=1
-        fig2.line(case_full['Time'].values, case_full[name], legend_label=name[9:], line_color = color[i])
-        
-    fig2.xaxis.axis_label = "time (s)"
-    fig2.yaxis.axis_label = "MAP (mmHg)"
-
-
-    layout = row(column(fig1,fig2))
+    fig4 = plot_one_fig(case_full, case_pred, 'MAP', columns_pred_MAP, columns_pred_MAP_full)
+    
+    layout = row(column(fig1,fig2), column(fig3,fig4))
     show(layout)
+    fig1.output_backend="svg"
+    export_svg(fig1, filename="fig1.svg")
+    fig2.output_backend="svg"
+    export_svg(fig2, filename="fig2.svg")
+    fig3.output_backend="svg"
+    export_svg(fig3, filename="fig3.svg")
+    fig4.output_backend="svg"
+    export_svg(fig4, filename="fig4.svg")
 
 
 
-
-
+def plot_surface(reg, scaler):
+    """Plot the 3D surface of the BIS related to Propofol and Remifentanil effect site concentration"""
+    age = 35
+    weight = 70
+    height = 170
+    sex = 1
+    bmi = weight / (height/100)**2
+    if sex == 1: # homme
+        lbm = 1.1 * weight - 128 * (weight / height) ** 2
+    else : #femme
+        lbm = 1.07 * weight - 148 * (weight / height) ** 2
+    MAP_base=100
+    
+    cer = np.linspace(1, 8, 50)
+    cep = np.linspace(1, 8, 50)
+    output = np.zeros((50,50))
+    X_p = np.zeros((50,50))
+    Y_r = np.zeros((50,50))
+    for i in range(len(cep)):
+        for j in range(len(cer)):
+            input = np.array([age, sex, height, weight, bmi, lbm, MAP_base, cep[i], cer[j],cep[i], cer[j]]).reshape(1, -1) 
+            input = scaler.transform(input)
+            output[i,j] = reg.predict(input)
+            X_p[i,j] = cep[i]
+            Y_r[i,j] = cer[j]
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    surf = ax.plot_surface(X_p, Y_r, output, cmap=cm.jet, linewidth=0.1)
+    ax.set_xlabel('Remifentanil')
+    ax.set_ylabel('Propofol')
+    ax.set_zlabel('BIS')
+    fig.colorbar(surf, shrink=0.5, aspect=5)
+    plt.show()
 
 
 

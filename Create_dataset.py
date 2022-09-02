@@ -62,7 +62,7 @@ cases.rename(columns = {'BIS/BIS':'BIS',
 cols = ['BIS','MAP','HR','Propofol','Remifentanil', "Ce_Prop", "Ce_Rem", "SQI", 'age', 'sex', 'height', 'weight', 'bmi']
 
 min_val= {'BIS': 20,'MAP': 50, 'Propofol':0, 'Remifentanil': 0, "Ce_Prop": 0, "Ce_Rem": 0, "SQI": 50, 'HR':20} 
-max_val= {'BIS': 70,'MAP': 130, 'Propofol':1e3, 'Remifentanil': 1e3, "Ce_Prop": 1e3, "Ce_Rem": 1e3, "SQI": 100, 'HR':150}
+max_val= {'BIS': 90,'MAP': 130, 'Propofol':1e3, 'Remifentanil': 1e3, "Ce_Prop": 1e3, "Ce_Rem": 1e3, "SQI": 100, 'HR':150}
 
 #%%
 Patients_train = pd.DataFrame()

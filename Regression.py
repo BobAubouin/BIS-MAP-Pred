@@ -16,10 +16,11 @@ from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.decomposition import PCA
 from sklearn.svm import SVR
 from sklearn.kernel_ridge import KernelRidge
-from sklearn.linear_model import ElasticNet, TheilSenRegressor
+from sklearn.linear_model import ElasticNet, TheilSenRegressor, BayesianRidge, HuberRegressor, SGDRegressor
 from sklearn.neural_network import MLPRegressor
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.model_selection import GridSearchCV
-from metrics_functions import compute_metrics, plot_results, plot_case
+from metrics_functions import compute_metrics, plot_results, plot_case, plot_surface
 
 
 #%% Load dataset
@@ -66,7 +67,8 @@ Patients_train = Patients_train[X_col + ['caseid','BIS','MAP','train_set']].drop
 Patients_test = Patients_test[X_col + ['caseid','BIS','MAP','Time']].dropna()
 
 
-name_rg = 'SVR'
+name_rg = 'TheilSenRegressor'
+filename = './saved_reg/reg_' + name_rg + '_feat_' + feature + '.pkl'
 poly_degree = 1
 pca_bool = False
 regressors = {}
@@ -82,7 +84,7 @@ Train_data['case_id'] = Patients_train['caseid']
 Test_data['case_id'] = Patients_test['caseid']
 
 i = 0
-filename = './saved_reg/reg_' + name_rg + '_lbm_feat_' + feature + '.pkl'
+
 for y_col in ['BIS', 'MAP']: #
 
     #--------------Training-------------
@@ -94,7 +96,7 @@ for y_col in ['BIS', 'MAP']: #
         
     except: #Otherwhise train the regressors and save it
         Y_train = Patients_train[y_col]
-        if name_rg=='ElasticNet' or name_rg=='TheilSenRegressor':
+        if name_rg in ['ElasticNet','TheilSenRegressor','BayesianRidge','KNeighborsRegressor','HuberRegressor','SGDRegressor']:
             X_train = PolynomialFeatures(degree=poly_degree, include_bias=False).fit_transform(Patients_train[X_col].values)   
             scaler = StandardScaler()
             X_train = scaler.fit_transform(X_train) 
@@ -137,13 +139,30 @@ for y_col in ['BIS', 'MAP']: #
         elif name_rg=='MLPRegressor':
             rg = MLPRegressor(learning_rate = 'adaptive', max_iter = 1000)
             Gridsearch = GridSearchCV(rg, {'hidden_layer_sizes': [128, 256, 512], 'alpha': 10.0 ** -np.arange(1, 7),
-                                           'activation': ('tanh','relu','logistic','identity')})
+                                           'activation': ('tanh','relu','logistic','identity')}, cv = ps)
             Gridsearch.fit(X_train, Y_train/100)
         elif name_rg=='TheilSenRegressor':
-            rg = TheilSenRegressor(n_jobs=8)
-            Gridsearch = GridSearchCV(rg, {'max_subpopulation': [1e4, 1e5]})
+            rg = TheilSenRegressor()
+            Gridsearch = GridSearchCV(rg, {'max_subpopulation': [1e4, 1e5]}, n_jobs = 8, cv = ps)
             Gridsearch.fit(X_train, Y_train)
-            
+        elif name_rg=='BayesianRidge':
+            rg = BayesianRidge(n_iter=1000)
+            Gridsearch = GridSearchCV(rg, {'alpha_1': [1e-6,1e-7,1e-5], 'alpha_2':[1e-6,1e-7,1e-5], 'lambda_1': [1e-6,1e-7,1e-5],
+                                           'lambda_2':[1e-6,1e-7,1e-5]}, n_jobs = 8, cv = ps)
+            Gridsearch.fit(X_train, Y_train)
+        elif name_rg=='KNeighborsRegressor':
+            rg = KNeighborsRegressor(n_jobs=8)
+            Gridsearch = GridSearchCV(rg, {'n_neighbors': [5,10,20,50,100, 500, 1000]}, n_jobs = 8, cv = ps)
+            Gridsearch.fit(X_train, Y_train)
+        elif name_rg=='HuberRegressor':
+            rg = HuberRegressor(max_iter=1000)
+            Gridsearch = GridSearchCV(rg, {'epsilon': [1.2, 1.35, 1.5, 2], 'alpha': [1e-5, 1e-4, 1e-3]}, n_jobs = 8, cv = ps)
+            Gridsearch.fit(X_train, Y_train)
+        elif name_rg=='SGDRegressor':
+            rg = SGDRegressor()
+            Gridsearch = GridSearchCV(rg, {'loss': ('squared_error', 'huber', 'epsilon_insensitive', 'squared_epsilon_insensitive'), 
+                                           'alpha':[1e-6,1e-7,1e-5]}, n_jobs = 8, cv = ps)
+            Gridsearch.fit(X_train, Y_train)
         print(Gridsearch.best_params_)
         
         rg = Gridsearch.best_estimator_
@@ -152,7 +171,7 @@ for y_col in ['BIS', 'MAP']: #
     
     #--------------test performances on test cases-------------
     
-    if name_rg=='ElasticNet' or name_rg=='TheilSenRegressor':
+    if name_rg in ['ElasticNet','TheilSenRegressor','BayesianRidge','KNeighborsRegressor','HuberRegressor','SGDRegressor']:
         X_train = PolynomialFeatures(degree=poly_degree, include_bias=False).fit_transform(Patients_train[X_col].values)
         scaler = StandardScaler()
         scaler.fit(X_train) 
@@ -195,7 +214,7 @@ for y_col in ['BIS', 'MAP']: #
     results[col_name] = y_predicted
     #-----------------test performances on train cases--------------------
     
-    if name_rg=='ElasticNet' or name_rg=='TheilSenRegressor':
+    if name_rg in ['ElasticNet','TheilSenRegressor','BayesianRidge','KNeighborsRegressor','HuberRegressor','SGDRegressor']:
         X_train = PolynomialFeatures(degree=poly_degree, include_bias=False).fit_transform(Patients_train[X_col].values)
         X_train = scaler.transform(X_train)
         if pca_bool:
@@ -219,17 +238,18 @@ for y_col in ['BIS', 'MAP']: #
     Train_data['true_' + y_col] = Patients_train[y_col]
     Train_data['pred_' + y_col] = y_predicted_train 
 
-
+    plot_surface(rg, scaler)
+    
 results.to_csv("./results.csv")
 
 print('     ***-----------------' + name_rg + '-----------------***')
 print("\n                 ------ Test Results ------")
-compute_metrics(Test_data)
+max_case_bis, min_case_bis, max_case_map, min_case_map = compute_metrics(Test_data)
 print("\n\n                 ------ Train Results ------")
 compute_metrics(Train_data)
 plot_results(Test_data, Train_data)
 
-plot_case(results, Patients_test_full, 101)
+plot_case(results, Patients_test_full, min_case_bis, min_case_map, max_case_bis, max_case_map)
 
 
 
