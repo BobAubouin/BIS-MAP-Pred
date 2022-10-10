@@ -27,7 +27,93 @@ from matplotlib import pyplot as plt
 from tensorflow.keras.models import load_model
 
 
-# parameters
+#%% functions
+def compute_metrics(data):
+
+    """compute the metrics MDPE +/- SD, MDAPE +/- SD and RMSE +/- SD for a prediction signals 
+    over a patient population.
+    Inputs:     - data is a panda dataframe with the fiels case_id, true_*, pred_*
+    Output:     -  caseid of the best and worst RMSE
+    print also the results to copy them in a latex table"""
+    
+    
+    MDPE = 0
+    MDAPE = 0
+    RMSE = 0
+    
+    SD_MDPE = 0
+    SD_MDAPE = 0
+    
+    RMSE_BIS_list = []
+    RMSE_list = []
+    case_length_list = []
+    rmse_max = 0
+    rmse_min = 1e10
+    
+    for col_name in data.columns:
+        if 'true' in col_name:
+            true_col = col_name
+        elif 'pred' in col_name:
+            pred_col = col_name
+    print(pred_col)
+    print(true_col)
+    
+    for case in data['case_id'].unique():
+        case_data = data[data['case_id']==case]
+        case_length = len(case_data)
+        PE = 100 * (case_data[true_col].values - case_data[pred_col].values)/case_data[true_col].values
+
+        MDPE += case_length * np.median(PE)
+        
+        MDAPE += case_length *  np.median(np.abs(PE))
+
+        efficiency_case = 4*int(case_length/2)/(np.pi * case_length)
+        
+        SD_MDPE += case_length * np.var(PE) / efficiency_case 
+        SD_MDAPE += case_length * np.var(np.abs(PE)) / efficiency_case
+
+        
+        rmse = np.sqrt(np.mean((case_data[true_col].values - case_data[pred_col].values)**2))
+     
+        RMSE += case_length * rmse
+        
+        RMSE_list.append(rmse)
+        case_length_list.append(case_length)
+        
+        if rmse>rmse_max:
+            case_rmse_max = case
+            rmse_max = rmse
+        if rmse<rmse_min:
+            case_rmse_min = case
+            rmse_min = rmse
+    sample_nb = len(data)
+    
+    MDPE /= sample_nb
+    MDAPE /= sample_nb
+    RMSE /= sample_nb
+
+
+    
+    SD_MDPE = np.sqrt(SD_MDPE / sample_nb)
+    SD_MDAPE = np.sqrt(SD_MDAPE / sample_nb)
+    
+
+    SD_RMSE = np.sqrt(np.sum([(RMSE_list[i] - RMSE)**2 * case_length_list[i] for i in range(len(RMSE_list)) ]) / sample_nb)
+
+    
+    col_name = pred_col[5:]
+    print("                 ______   "+col_name+" results   ______")
+    print( "     MDPE \t & \t MDAPE \t & \t RMSE       ")
+
+    print( "$" + str(round(MDPE,1)) + " \pm " + str(round(SD_MDPE,1) ) 
+          + "$ & $" + str(round(MDAPE,1)) + " \pm " + str(round(SD_MDAPE,1)) 
+          + "$ & $" + str(round(RMSE,1)) + " \pm " + str(round(SD_RMSE,1))+ "$")
+
+
+    return case_rmse_max, case_rmse_min
+
+
+#%% parameters
 timepoints = 60
 lnode = 8
 fnode = 16
@@ -58,14 +144,7 @@ sample_nb = 0
 Ytrue = np.zeros(1)
 Ypred = np.zeros(1)
 
-MDPE_BIS = 0
-MDAPE_BIS = 0
-
-SD_MDPE_BIS = 0
-SD_MDAPE_BIS = 0
-    
-RMSE_list_BIS = []
-case_length_list = []
+Output_df = pd.DataFrame(columns=['case_id','true_BIS','pred_BIS'])
 
 
 print('id\ttesting_err')
@@ -93,48 +172,14 @@ for id in test_p.keys():
     true_y = true_y.T
     pred_y = pred_y[:, 0].T
     case_len = len(pred_y)
-
-    PE = 100*(true_y - pred_y)/true_y
     
-    MDPE_BIS += case_len * np.median(PE)
-    MDAPE_BIS += case_len *  np.median(np.abs(PE))
-    print(str(id) + '\t' + str(np.median(np.abs(PE))))
-    efficiency_case = 4*int(case_len/2)/(np.pi * case_len)
+    Output_df_temp = pd.DataFrame(columns=['case_id','true_BIS','pred_BIS'])
+    Output_df_temp['case_id'] = np.ones((case_len)) * float(id)
+    Output_df_temp['true_BIS'] = true_y*100
+    Output_df_temp['pred_MAP']  = pred_y*100
+    Output_df = pd.concat([Output_df, Output_df_temp], ignore_index=True)
     
-    SD_MDPE_BIS += case_len * np.var(PE) / efficiency_case
-    SD_MDAPE_BIS += case_len * np.var(np.abs(PE)) / efficiency_case
-    
-    RMSE_BIS = np.sqrt(np.mean((100*(true_y - pred_y))**2))
-    RMSE_list_BIS.append(RMSE_BIS)
-    case_length_list.append(case_len)
-    
-    Ytrue = np.concatenate((Ytrue, true_y*100), axis=0)
-    Ypred = np.concatenate((Ypred, (pred_y)*100), axis=0)
-    true_y = true_y.tolist()
-    pred_y = pred_y.tolist()
-
-    
-    sample_nb += case_len
-
-
-Ytrue = Ytrue[1:]
-Ypred = Ypred[1:]
-
-
-MDPE_BIS /= sample_nb
-MDAPE_BIS /= sample_nb
-RMSE_BIS = np.sum([RMSE_list_BIS[i] * case_length_list[i] for i in range(len(RMSE_list_BIS))]) / sample_nb
-
-SD_MDPE_BIS = np.sqrt(SD_MDPE_BIS / sample_nb)
-SD_MDAPE_BIS = np.sqrt(SD_MDAPE_BIS / sample_nb)
-SD_RMSE_BIS = np.sqrt(np.sum([(RMSE_list_BIS[i] - RMSE_BIS)**2 * case_length_list[i] for i in range(len(RMSE_list_BIS)) ]) / sample_nb)
-
-print("                 ______   BIS results   ______")
-print( "     MDPE      &       MDAPE      &       RMSE       ")
-
-print( "$" + str(round(MDPE_BIS, 1)) + " \pm " + str(round(SD_MDPE_BIS, 1) ) 
-      + "$ & $" + str(round(MDAPE_BIS, 1)) + " \pm " + str(round(SD_MDAPE_BIS, 1)) 
-      + "$ & $" + str(round(RMSE_BIS, 1)) + " \pm " + str(round(SD_RMSE_BIS, 1))+ "$")
+compute_metrics(Output_df)
 
 #%%plot function
 from bokeh.plotting import figure, show
