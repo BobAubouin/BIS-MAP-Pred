@@ -68,7 +68,7 @@ cases = load_cases(['BIS/BIS', 'Orchestra/PPF20_RATE', 'Orchestra/RFTN20_RATE',
                     'Orchestra/PPF20_CE', 'Orchestra/RFTN20_CE', 'Solar8000/ART_MBP',
                     'BIS/SQI', 'Solar8000/PLETH_HR', 'Orchestra/PPF20_CP',
                     'Orchestra/RFTN20_CP', 'Orchestra/RFTN20_VOL',
-                    'Orchestra/PPF20_VOL', 'Solar8000/NIBP_MBP'], caseids=(caselist))  # load the case from vitalDB
+                    'Orchestra/PPF20_VOL', 'Solar8000/NIBP_MBP'], caseids=caselist)  # load the case from vitalDB
 
 cases.rename(columns={'BIS/BIS': 'BIS',
                       'Orchestra/PPF20_RATE': 'Propofol',
