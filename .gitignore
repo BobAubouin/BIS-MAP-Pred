@@ -7,3 +7,5 @@ Patients_test.csv
 Patients_train.csv
 lee_code/cache*
 
+backup/ # old scripts
+*.svg # code output
