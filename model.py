@@ -170,18 +170,31 @@ def PropoModel(model: str, age: int, sex: bool, weight: float, height: float):
     return v1, A
 
 
-def RemiModel(model, age, sex, weight, height):
+def RemiModel(model: str, age: int, sex: bool, weight: float, height: float):
     """PK model for remifentanil, with BIS and MAP effect sites.
-    Inputs:         -  model: string to specify the computation of the coefficient can be 'Schnider - Minto', 'Marsh - Minto' or 'Eleveld'
-                    - age: age of the patient in year
-                    - sex: 1=male, 0=female
-                    - weight in kg
-                    - height in cm
 
-    Outputs:        - v1: volume of the blood compartment
-                    - A matrix of the linear system x(k+1) = A x(k) + B u(k), where x includes Cblood, Cfat, Cmuscle, Cbis, Cmap in this order
-                    """
+    Parameters
+    ----------
+    model : str
+        Specify the computation of the coefficient can be 'Schnider - Minto', 'Marsh - Minto' or 'Eleveld'.
+    age : int
+        Age of the patient in year.
+    sex : Bool
+        1=male, 0=female.
+    weight : float
+        weight in kg.
+    height : float
+        height in cm.
 
+    Returns
+    -------
+    v1 : float
+        Volume of the blood compartment.
+    A : np.array
+        matrix of the linear system x(k+1) = A x(k) + B u(k),
+        where x includes Cblood, Cfat, Cmuscle, Cbis, Cmap in this order.
+
+    """
     if model == 'Marsh - Minto' or model == 'Schnider - Minto':
         if sex == 1:  # homme
             lbm = 1.1 * weight - 128 * (weight / height) ** 2
@@ -272,19 +285,36 @@ def RemiModel(model, age, sex, weight, height):
     return v1, A
 
 
-def surface_model(x_p, x_r, base_MAP):
-    """Surface model for Propofol-Remifentanil interaction on BIS and MAP. Coefficients come from:
+def surface_model(x_p: list, x_r: list, base_MAP: float):
+    """
+    Surface model for Propofol-Remifentanil interaction on BIS and MAP.
+
+    Coefficients come from:
         - "Refining Target-Controlled Infusion: An Assessment of Pharmacodynamic Target-Controlled Infusion of
-            Propofol and Remifentanil Using a Response Surface Model of Their Combined Effects on Bispectral Index" by Short et al.
-        - "Pharmacokinetic–pharmacodynamic modeling of the hypotensive effect of remifentanil in infants undergoing cranioplasty" by Standing et al.
-        - "Pharmacodynamic response modelling of arterial blood pressure in adult volunteers during propofol anaesthesia" by C. Jeleazcov et al.
+            Propofol and Remifentanil Using a Response Surface Model of Their Combined Effects on Bispectral Index"
+            by Short et al.
+        - "Pharmacokinetic–pharmacodynamic modeling of the hypotensive effect of remifentanil in infants undergoing
+            cranioplasty" by Standing et al.
+        - "Pharmacodynamic response modelling of arterial blood pressure in adult volunteers during propofol
+            anaesthesia" by C. Jeleazcov et al.
 
-        Inputs:     - x_p: state vector of Propofol PK model
-                    - x_r: state vector of remifentanil Pk model
-                    - base_MAP: Initial MAP
+    Parameters
+    ----------
+    x_p : list
+        state vector of Propofol PK model.
+    x_r : list
+        state vector of remifentanil Pk model.
+    base_MAP : float
+        Initial MAP.
 
-        Outputs:    - bis and MAP respectively in (%) and (mmHg)
-                    """
+    Returns
+    -------
+    bis : float
+        in (%).
+    Map : float
+        in mmHg.
+
+    """
     # BIS computation
     c50p_bis = 4.47
     C50r_bis = 19.3
@@ -328,13 +358,32 @@ def surface_model(x_p, x_r, base_MAP):
     return bis, Map
 
 
-def discretize(A, B, Te):
+def discretize(A: list, B: list, Ts: float = 1):
+    """Discretize LTI system.
+
+    Parameters
+    ----------
+    A : list
+        Dynamic matrix of the system dx/dt = Ax + Bu.
+    B : list
+        Input matrix of the system dx/dt = Ax + Bu.
+    Ts : float
+        Sampling time (s). Default is 1s.
+
+    Returns
+    -------
+    Ad : list
+        Dynamic matrix of the system x(t+Te) = Ad x(t) + Bd u(t).
+    Bd : list
+        Input matrix of the system x(t+Te) = Ad x(t) + Bd u(t).
+
+    """
     """Discretize the system dx/dt = Ax + Bu and return Ad and Bd such that x(t+Te) = Ad x(t) + Bd u(t),
         Te is given in (s)"""
     C = np.zeros((1, len(A)))
     D = 0
     model = control.ss(np.array(A)/60, B, C, D)  # A divided by 60 because it was in 1/min
-    model = control.sample_system(model, Te)
+    model = control.sample_system(model, Ts)
     Ad = model.A
     Bd = model.B
     return Ad, Bd

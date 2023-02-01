@@ -8,15 +8,15 @@ Created on Wed Jul 20 12:46:15 2022
 
 import numpy as np
 import pandas as pd
-from metrics_functions import compute_metrics, plot_results
+from metrics_functions import compute_metrics
 import matplotlib.pyplot as plt
-from model import *
+import model
 
 # Model to test
 
-model = 'Eleveld'
-# model = 'Schnider - Minto'
-# model = 'Marsh - Minto'
+model_name = 'Eleveld'
+# model_name = 'Schnider - Minto'
+# model_name = 'Marsh - Minto'
 
 
 # %% load data
@@ -27,8 +27,8 @@ Patients_test = pd.read_csv("./Patients_test.csv", index_col=0)
 Output_df = pd.DataFrame(columns=['case_id', 'true_BIS', 'pred_BIS', 'true_MAP', 'pred_MAP', 'full_BIS', 'full_MAP'])
 
 i = 0
-if 'pred_BIS_'+model not in Patients_test.columns:
-    Patients_test.insert(len(Patients_test.columns), 'pred_BIS_'+model, 0)
+if 'pred_BIS_' + model_name not in Patients_test.columns:
+    Patients_test.insert(len(Patients_test.columns), 'pred_BIS_'+model_name, 0)
 
 for caseid in Patients_test['caseid'].unique():
     print(caseid)
@@ -46,16 +46,16 @@ for caseid in Patients_test['caseid'].unique():
     weight = int(Patient_df['weight'][0])
     sex = int(Patient_df['sex'][0])
 
-    v1_p, Ap = PropoModel(model, age, sex, weight, height)
-    v1_r, Ar = RemiModel(model, age, sex, weight, height)
+    v1_p, Ap = model.PropoModel(model_name, age, sex, weight, height)
+    v1_r, Ar = model.RemiModel(model_name, age, sex, weight, height)
 
     Bp = np.zeros((6, 1))
     Bp[0, 0] = 1 / v1_p
     Br = np.zeros((5, 1))
     Br[0, 0] = 1 / v1_r
 
-    Adp, Bdp = discretize(Ap, Bp, 1)
-    Adr, Bdr = discretize(Ar, Br, 1)
+    Adp, Bdp = model.discretize(Ap, Bp, 1)
+    Adr, Bdr = model.discretize(Ar, Br, 1)
 
     Ncase = len(Patient_df['BIS'])
     Output_df_temp['true_BIS'] = Patient_df['BIS']
@@ -69,12 +69,12 @@ for caseid in Patients_test['caseid'].unique():
 
     x_p = np.zeros((6, 1))
     x_r = np.zeros((5, 1))
-    Output_df_temp.loc[0, 'pred_BIS'], Output_df_temp.loc[0, 'pred_MAP'] = surface_model(x_p, x_r, MAP_base_case)
+    Output_df_temp.loc[0, 'pred_BIS'], Output_df_temp.loc[0, 'pred_MAP'] = model.surface_model(x_p, x_r, MAP_base_case)
     for j in range(Ncase-1):
         x_p = Adp @ x_p + Bdp * Patient_df['Propofol'][j]*20/3600
         x_r = Adr @ x_r + Bdr * Patient_df['Remifentanil'][j]*20/3600
 
-        Bis, Map = surface_model(x_p, x_r, MAP_base_case)
+        Bis, Map = model.surface_model(x_p, x_r, MAP_base_case)
         Output_df_temp.loc[j+1, 'pred_BIS'] = Bis
         Output_df_temp.loc[j+1, 'pred_MAP'] = Map
 
@@ -84,8 +84,8 @@ for caseid in Patients_test['caseid'].unique():
     # Output_df_temp['true_BIS'] = Output_df_temp['true_BIS'].diff()
     # Output_df_temp.loc[0, 'true_BIS'] = 0
     # Output_df_temp.loc[0, 'pred_BIS'] = 0
-    Patients_test.loc[Patients_test["caseid"] == caseid, 'pred_BIS_'+model] = Output_df_temp['pred_BIS'].values
-    Patients_test.loc[Patients_test["caseid"] == caseid, 'pred_MAP_'+model] = Output_df_temp['pred_MAP'].values
+    Patients_test.loc[Patients_test["caseid"] == caseid, 'pred_BIS_'+model_name] = Output_df_temp['pred_BIS'].values
+    Patients_test.loc[Patients_test["caseid"] == caseid, 'pred_MAP_'+model_name] = Output_df_temp['pred_MAP'].values
 
     if i % 5 == 0:
         fig, ax = plt.subplots(2)

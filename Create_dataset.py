@@ -178,8 +178,10 @@ for caseid in cases['caseid'].unique():
 
     Patient_df.loc[(Patient_df['BIS'] <= min_val['BIS']) | (Patient_df['BIS'] >= max_val['BIS']), 'full_BIS'] = np.ones(
         (len(Patient_df.loc[(Patient_df['BIS'] <= min_val['BIS']) | (Patient_df['BIS'] >= max_val['BIS']), 'full_BIS'])))
+
     Patient_df.loc[(Patient_df['MAP'] <= min_val['MAP']) | (Patient_df['MAP'] >= max_val['MAP']), 'full_MAP'] = np.ones(
         (len(Patient_df.loc[(Patient_df['MAP'] <= min_val['MAP']) | (Patient_df['MAP'] >= max_val['MAP']), 'full_MAP'])))
+
     Patient_df.loc[Patient_df['BIS'].isna(), 'full_BIS'] = np.ones(
         (len(Patient_df.loc[Patient_df['BIS'].isna(), 'full_BIS'])))
     Patient_df.loc[Patient_df['MAP'].isna(), 'full_MAP'] = np.ones(
