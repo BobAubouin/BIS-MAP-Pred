@@ -36,6 +36,7 @@ def load_cases(track_names: list, caseids: list):
         dataframe_temp = cases.to_pandas(track_names, 1)
         dataframe_temp.insert(0, 'caseid', caseid)
         dataframe_final = pd.concat([dataframe_final, dataframe_temp], ignore_index=True)
+    return dataframe_final
 
 
 # %% Load data
@@ -297,8 +298,8 @@ print("nb point test: " + str(len(Patients_test['BIS'])))
 
 print_dist = True
 
-Patients_train = pd.read_csv("./Patients_train.csv", index_col=0)
-Patients_test = pd.read_csv("./Patients_test.csv", index_col=0)
+Patients_train = pd.to_csv("./Patients_train.csv", index_col=0)
+Patients_test = pd.to_csv("./Patients_test.csv", index_col=0)
 # %%
 if print_dist:
 
