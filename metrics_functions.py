@@ -99,8 +99,11 @@ def compute_metrics(data):
     print("$" + str(round(MDPE, 1)) + " \pm " + str(round(SD_MDPE, 1))
           + "$ & $" + str(round(MDAPE, 1)) + " \pm " + str(round(SD_MDAPE, 1))
           + "$ & $" + str(round(RMSE, 1)) + " \pm " + str(round(SD_RMSE, 1)) + "$")
-
-    return case_rmse_max, case_rmse_min
+    df = pd.DataFrame({'MDPE': f"${round(MDPE, 1)} \pm {round(SD_MDPE, 1)}$",
+                       'MDAPE': f"${round(MDAPE, 1)} \pm {round(SD_MDAPE, 1)}$",
+                       'RMSE': f"${round(RMSE, 1)} \pm {round(SD_RMSE, 1)}$"},
+                       index=[0])
+    return case_rmse_max, case_rmse_min, df
 
 
 def plot_results(data_BIS, data_MAP, data_train_BIS=pd.DataFrame(), data_train_MAP=pd.DataFrame()):

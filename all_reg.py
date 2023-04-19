@@ -28,7 +28,7 @@ Patients_test = pd.read_csv("./Patients_test.csv", index_col=0)
 
 # %% Undersample data
 
-step = 60  # Undersampling step
+step = 90  # Undersampling step
 
 
 Patients_test_full = Patients_test.copy()
@@ -76,8 +76,8 @@ Patients_test_BIS = Patients_test_BIS[X_col + ['caseid', 'BIS', 'Time']].dropna(
 Patients_train_MAP = Patients_train_MAP[X_col + ['caseid', 'MAP', 'train_set']].dropna()
 Patients_test_MAP = Patients_test_MAP[X_col + ['caseid', 'MAP', 'Time']].dropna()
 
-
-for name_rg in ['SVR', 'ElasticNet', 'KNeighborsRegressor', 'KernelRidge']:
+results_df = pd.DataFrame()
+for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR', 'MLPRegressor']:
     filename = './saved_reg/reg_' + name_rg + '_feat_' + feature + '.pkl'
     poly_degree = 1
     pca_bool = False
@@ -101,7 +101,6 @@ for name_rg in ['SVR', 'ElasticNet', 'KNeighborsRegressor', 'KernelRidge']:
     Test_data_MAP['case_id'] = Patients_test_MAP['caseid']
 
     i = 0
-
     for y_col in ['BIS', 'MAP']:
         # --------------Training-------------
         if y_col == 'BIS':
@@ -145,7 +144,7 @@ for name_rg in ['SVR', 'ElasticNet', 'KNeighborsRegressor', 'KernelRidge']:
             elif name_rg == 'KernelRidge':
                 parameters = {'kernel': ('linear', 'rbf', 'polynomial'), 'alpha': np.logspace(-3, 1, 5)}
                 rg = KernelRidge()
-                #kmeans = KMeans(n_clusters=5000, random_state=0, verbose=4).fit(np.concatenate((X_train,np.expand_dims(Y_train,axis=1)),axis=1))
+                # kmeans = KMeans(n_clusters=5000, random_state=0, verbose=4).fit(np.concatenate((X_train,np.expand_dims(Y_train,axis=1)),axis=1))
                 Gridsearch = GridSearchCV(rg, parameters, cv=ps, n_jobs=8,
                                           scoring='neg_mean_squared_error', return_train_score=True, verbose=4)
                 Gridsearch.fit(X_train, Y_train)
@@ -280,24 +279,41 @@ for name_rg in ['SVR', 'ElasticNet', 'KNeighborsRegressor', 'KernelRidge']:
                 y_predicted_train = rg.predict(X_train)*150
 
         if y_col == 'BIS':
-            Train_data_BIS['true_' + y_col] = Patients_train[y_col]
-            Train_data_BIS['pred_' + y_col] = y_predicted_train
+            Train_data_BIS[f'true_{y_col}'] = Patients_train[y_col]
+            Train_data_BIS[f'pred_{y_col}'] = y_predicted_train
         else:
-            Train_data_MAP['true_' + y_col] = Patients_train[y_col]
-            Train_data_MAP['pred_' + y_col] = y_predicted_train
+            Train_data_MAP[f'true_{y_col}'] = Patients_train[y_col]
+            Train_data_MAP[f'pred_{y_col}'] = y_predicted_train
 
         # plot_surface(rg, scaler, feature)
 
     # results_BIS.to_csv("./results_BIS.csv")
     # results_MAP.to_csv("./results_MAP.csv")
 
-    print('     ***-----------------' + name_rg + '-----------------***')
-    print("\n                 ------ Test Results ------")
-    max_case_bis, min_case_bis = compute_metrics(Test_data_BIS)
-    max_case_map, min_case_map = compute_metrics(Test_data_MAP)
-    # print("\n\n                 ------ Train Results ------")
-    # compute_metrics(Train_data_BIS)
-    # compute_metrics(Train_data_MAP)
-    # plot_results(Test_data_BIS, Test_data_MAP, Train_data_BIS, Train_data_MAP)
+    print(
+        f"***{name_rg:-^30s}***\n"
+        f"***{' Test Results ':-^30s}***")
 
-    # plot_case(results_BIS, results_MAP, Patients_test_full, min_case_bis, min_case_map, max_case_bis, max_case_map)
+    max_case_bis, min_case_bis, df_bis = compute_metrics(Test_data_BIS)
+    df_bis.rename(columns={'MDPE': 'MDPE_BIS',
+                           'MDAPE': 'MDAPE_BIS',
+                           'RMSE': 'RMSE_BIS'}, inplace=True)
+    max_case_map, min_case_map, df_map = compute_metrics(Test_data_MAP)
+    df_map.rename(columns={'MDPE': 'MDPE_MAP',
+                           'MDAPE': 'MDAPE_MAP',
+                           'RMSE': 'RMSE_MAP'}, inplace=True)
+    df = pd.concat([pd.DataFrame({'name_rg': name_rg}, index=[0]), df_bis, df_map], axis=1)
+    results_df = pd.concat([results_df, df], axis=0)
+
+print('\n')
+styler = results_df.style
+styler.hide(axis='index')
+# styler.format(precision=2)
+print(styler.to_latex())
+
+# print("\n\n                 ------ Train Results ------")
+# compute_metrics(Train_data_BIS)
+# compute_metrics(Train_data_MAP)
+# plot_results(Test_data_BIS, Test_data_MAP, Train_data_BIS, Train_data_MAP)
+
+# plot_case(results_BIS, results_MAP, Patients_test_full, min_case_bis, min_case_map, max_case_bis, max_case_map)
