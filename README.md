@@ -6,7 +6,7 @@ GitHub associated with the research paper "Data-based Pharmacodynamic Modeling f
 Install all the required packages with the command:
 
 ```python
-pip install - r requirement.txt
+pip install -r requirement.txt
 ```
 
 ## Usage
