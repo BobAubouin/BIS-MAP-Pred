@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-dataframe = pd.read_csv("Full_data.csv")
+dataframe = pd.read_csv("./data/full_data.csv")
 
 dataframe.Target_Propo.fillna(method="ffill", inplace=True)
 dataframe.Target_Remi.fillna(method="ffill", inplace=True)
@@ -40,7 +40,7 @@ df_concat.sort_values(by='mean', inplace=True, ascending=False)
 train_list = df_concat.index[int(0.3*len(df_concat)):].tolist()
 
 # save train list
-with open("train_list.txt", "w") as f:
+with open("./data/train_list.txt", "w") as f:
     for caseid in train_list:
         f.write(str(caseid) + "\n")
 

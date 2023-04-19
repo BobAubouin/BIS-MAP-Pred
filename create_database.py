@@ -36,13 +36,13 @@ plt.rc('font', family='serif')
 
 
 # %% Load data
-perso_data = pd.read_csv("./info_clinic_vitalDB.csv", decimal='.')  # personal data
+perso_data = pd.read_csv("./data/info_clinic_vitalDB.csv", decimal='.')  # personal data
 
 
 # id_list
 
 
-with open('./caseid_list.txt', 'r') as f:
+with open('./data/caseid_list.txt', 'r') as f:
     caselist = f.read().splitlines()
 
 caselist = [int(i) for i in caselist]
@@ -258,4 +258,4 @@ for caseid, Patient_df in cases.groupby('caseid'):
 
 
 # Save Patients DataFrame
-Full_data.to_csv("./Full_data.csv")
+Full_data.to_csv("./data/full_data.csv")

@@ -22,8 +22,8 @@ from metrics_functions import compute_metrics, plot_results, plot_case, plot_sur
 
 
 # %% Load dataset
-Patients_train = pd.read_csv("./Patients_train.csv", index_col=0)
-Patients_test = pd.read_csv("./Patients_test.csv", index_col=0)
+Patients_train = pd.read_csv("./data/Patients_train.csv", index_col=0)
+Patients_test = pd.read_csv("./data/Patients_test.csv", index_col=0)
 
 # %% Undersample data
 
@@ -57,7 +57,6 @@ output = ['BIS', 'MAP']
 X_col = cov + ['bmi', 'lbm', 'mean_HR'] + Ce_map_eleveld + Ce_bis_eleveld + Cplasma_eleveld
 
 
-
 Patients_train_BIS = Patients_train_BIS[X_col + ['caseid', output[0], 'train_set']].dropna()
 Patients_test_BIS = Patients_test_BIS[X_col + ['caseid', output[0], 'Time']].dropna()
 Patients_train_MAP = Patients_train_MAP[X_col + ['caseid', output[1], 'train_set']].dropna()
@@ -72,8 +71,8 @@ for name_rg in ['SVR']:
     regressors = {}
 
     try:
-        results_BIS = pd.read_csv("./results_"+output[0]+".csv", index_col=0)
-        results_MAP = pd.read_csv("./results_"+output[1]+".csv", index_col=0)
+        results_BIS = pd.read_csv("./data/results_"+output[0]+".csv", index_col=0)
+        results_MAP = pd.read_csv("./data/results_"+output[1]+".csv", index_col=0)
     except:
         results_BIS = Patients_test_BIS[['Time', 'caseid', output[0]]].copy()
         results_MAP = Patients_test_MAP[['Time', 'caseid', output[1]]].copy()
@@ -113,12 +112,11 @@ for name_rg in ['SVR']:
 
             ps = PredefinedSplit(Patients_train['train_set'].values)
 
-
             # ---SVR----
             rg = SVR(verbose=0, shrinking=False, cache_size=1000)  # kernel = 'poly', 'rbf'; 'linear', 'sigmoid'
             Gridsearch = GridSearchCV(rg, {'kernel': ['linear'], 'C': [0.1], 'degree': [2],
-                                            'gamma': np.logspace(-1, 3, 5), 'epsilon': np.logspace(-3, 1, 5)},  # np.logspace(-2,1,3)
-                                        n_jobs=8, cv=ps, scoring='r2', verbose=0)
+                                           'gamma': np.logspace(-1, 3, 5), 'epsilon': np.logspace(-3, 1, 5)},  # np.logspace(-2,1,3)
+                                      n_jobs=8, cv=ps, scoring='r2', verbose=0)
 
             Gridsearch.fit(X_train[:], Y_train[:])
 
@@ -153,7 +151,6 @@ for name_rg in ['SVR']:
             results_MAP.loc[:, col_name] = y_predicted
         # -----------------test performances on train cases--------------------
 
-
         X_train = Patients_train[X_col].values
         X_train = scaler.transform(X_train)
         X_train = poly.transform(X_train)
@@ -184,18 +181,18 @@ for name_rg in ['SVR']:
     df_map.rename(columns={'MDPE': 'MDPE_MAP',
                            'MDAPE': 'MDAPE_MAP',
                            'RMSE': 'RMSE_MAP'}, inplace=True)
-    df = pd.concat([pd.DataFrame({'name_rg':name_rg}, index=[0]), df_bis, df_map], axis=1)
+    df = pd.concat([pd.DataFrame({'name_rg': name_rg}, index=[0]), df_bis, df_map], axis=1)
     results_df = pd.concat([results_df, df], axis=0)
 print('\n')
 styler = results_df.style
 styler.hide(axis='index')
 # styler.format(precision=2)
 print(styler.to_latex())
-    # print("\n\n                 ------ Train Results ------")
-    # compute_metrics(Train_data_BIS)
-    # compute_metrics(Train_data_MAP)
-    # plot_results(Test_data_BIS, Test_data_MAP, Train_data_BIS, Train_data_MAP)
+# print("\n\n                 ------ Train Results ------")
+# compute_metrics(Train_data_BIS)
+# compute_metrics(Train_data_MAP)
+# plot_results(Test_data_BIS, Test_data_MAP, Train_data_BIS, Train_data_MAP)
 
-    # plot_case(results_BIS, results_MAP, Patients_test_full, min_case_bis, min_case_map, max_case_bis, max_case_map)
+# plot_case(results_BIS, results_MAP, Patients_test_full, min_case_bis, min_case_map, max_case_bis, max_case_map)
 
 # %%

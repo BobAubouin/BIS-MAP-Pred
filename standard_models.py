@@ -14,7 +14,7 @@ import python_anesthesia_simulator as pas
 
 
 # %% load data
-Patients_test = pd.read_csv("./Patients_test.csv", index_col=0)
+Patients_test = pd.read_csv("./data/Patients_test.csv", index_col=0)
 
 # %% Perform simulation
 model_name_list = ['Eleveld', 'Schnider-Minto', 'Marsh-Minto']

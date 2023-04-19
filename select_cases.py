@@ -164,7 +164,7 @@ final_caseid_list = [caseid for caseid in final_caseid_list if caseid not in bad
 print(f"Number of cases with good visual inspection: {len(final_caseid_list)}")
 
 # save the list of caseid
-with open('caseid_list.txt', 'w') as f:
+with open('./data/caseid_list.txt', 'w') as f:
     for item in final_caseid_list:
         f.write("%s\n" % item)
 

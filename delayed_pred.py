@@ -22,8 +22,8 @@ from metrics_functions import compute_metrics, plot_results, plot_case, plot_sur
 
 
 # %% Load dataset
-Patients_train = pd.read_csv("./Patients_train.csv", index_col=0)
-Patients_test = pd.read_csv("./Patients_test.csv", index_col=0)
+Patients_train = pd.read_csv("./data/Patients_train.csv", index_col=0)
+Patients_test = pd.read_csv("./data/Patients_test.csv", index_col=0)
 
 # %% Undersample data
 
@@ -76,8 +76,8 @@ for delay in [0, 30, 120, 300, 600]:  # Delay in seconds
     regressors = {}
 
     try:
-        results_BIS = pd.read_csv("./results_"+output[0]+".csv", index_col=0)
-        results_MAP = pd.read_csv("./results_"+output[1]+".csv", index_col=0)
+        results_BIS = pd.read_csv("./data/results_"+output[0]+".csv", index_col=0)
+        results_MAP = pd.read_csv("./data/results_"+output[1]+".csv", index_col=0)
     except:
         results_BIS = Patients_test_BIS[['Time', 'caseid', output[0]]].copy()
         results_MAP = Patients_test_MAP[['Time', 'caseid', output[1]]].copy()

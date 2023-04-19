@@ -23,8 +23,8 @@ from metrics_functions import compute_metrics, plot_results, plot_case, plot_sur
 
 
 # %% Load dataset
-Patients_train = pd.read_csv("./Patients_train.csv", index_col=0)
-Patients_test = pd.read_csv("./Patients_test.csv", index_col=0)
+Patients_train = pd.read_csv("./data/Patients_train.csv", index_col=0)
+Patients_test = pd.read_csv("./data/Patients_test.csv", index_col=0)
 
 # %% Undersample data
 
@@ -84,8 +84,8 @@ for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR', 'MLPR
     regressors = {}
 
     try:
-        results_BIS = pd.read_csv("./results_BIS.csv", index_col=0)
-        results_MAP = pd.read_csv("./results_MAP.csv", index_col=0)
+        results_BIS = pd.read_csv("./data/results_BIS.csv", index_col=0)
+        results_MAP = pd.read_csv("./data/results_MAP.csv", index_col=0)
     except:
         results_BIS = Patients_test_BIS[['Time', 'caseid', 'BIS']].copy()
         results_MAP = Patients_test_MAP[['Time', 'caseid', 'MAP']].copy()
