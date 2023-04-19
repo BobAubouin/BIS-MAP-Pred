@@ -1,6 +1,9 @@
 # pycache folder
 __pycache__/
 
+# vscode folder
+.vscode/
+
 # datasets
 Patients_test.csv
 Patients_train.csv
