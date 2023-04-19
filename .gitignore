@@ -5,8 +5,8 @@ __pycache__/
 .vscode/
 
 # datasets
-Patients_test.csv
-Patients_train.csv
+data/
+!data/info_clinic_vitalDB.csv
 lee_code/cache*
 
 # old scripts
