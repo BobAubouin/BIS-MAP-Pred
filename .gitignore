@@ -8,11 +8,13 @@ __pycache__/
 data/
 !data/info_clinic_vitalDB.csv
 lee_code/cache*
+lee_code/*.csv
+
 
 # old scripts
 backup/ 
 
 # code output
-
+outputs/
 *.svg 
 saved_reg/
