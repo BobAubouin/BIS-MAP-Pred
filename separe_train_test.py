@@ -13,12 +13,12 @@ dataframe.Target_Remi.fillna(method="ffill", inplace=True)
 # Explore data
 dataframe_by_caseid = dataframe.groupby("caseid")
 Propo_freq = dataframe_by_caseid.Target_Propo.diff().astype(bool).sum() / \
-    dataframe_by_caseid.Target_Propo.count()
+    (dataframe_by_caseid.Target_Propo.count()/60/60)
 Propo_freq.plot(kind="hist", bins=20)
 plt.show()
 
 Remi_freq = dataframe_by_caseid.Target_Remi.diff().astype(bool).sum() / \
-    dataframe_by_caseid.Target_Remi.count()
+    (dataframe_by_caseid.Target_Remi.count()/60/60)
 Remi_freq.plot(kind="hist", bins=20)
 plt.show()
 
@@ -89,32 +89,34 @@ if print_dist:
     Data_plot_test = pd.DataFrame(data=Data_test, columns=['age', 'height', 'weight', 'sex'])
 
     fig, axs = plt.subplots(2, 2)
-    Data_plot_test['age'].hist(label="test", ax=axs[0, 0])
     Data_plot_train['age'].hist(label="train", alpha=0.5, ax=axs[0, 0])
+    Data_plot_test['age'].hist(label="test", ax=axs[0, 0])
     axs[0, 0].set_title('Age')
     axs[0, 0].set_axisbelow(True)
     axs[0, 0].legend()
 
-    Data_plot_test['weight'].hist(label="test", ax=axs[0, 1])
     Data_plot_train['weight'].hist(label="train", alpha=0.5, ax=axs[0, 1])
+    Data_plot_test['weight'].hist(label="test", ax=axs[0, 1])
     axs[0, 1].set_title('Weight')
     axs[0, 1].set_axisbelow(True)
 
-    Data_plot_test['height'].hist(label="test", ax=axs[1, 0])
     Data_plot_train['height'].hist(label="train", alpha=0.5, ax=axs[1, 0])
+    Data_plot_test['height'].hist(label="test", ax=axs[1, 0])
     axs[1, 0].set_title('Height')
     axs[1, 0].set_axisbelow(True)
+
+    data = []
+    for i in range(len(Data_plot_train['sex'])):
+        data.append(('M'*int(Data_plot_train['sex'][i]) + 'F'*(1 - int(Data_plot_train['sex'][i]))))
+    print_df = pd.DataFrame(data, columns=['sex'])
+    print_df['sex'].hist(label="train", alpha=0.5, ax=axs[1, 1])
 
     data = []
     for i in range(len(Data_plot_test['sex'])):
         data.append(('M'*int(Data_plot_test['sex'][i]) + 'F'*(1 - int(Data_plot_test['sex'][i]))))
     print_df = pd.DataFrame(data, columns=['sex'])
     print_df['sex'].hist(label="test", ax=axs[1, 1])
-    data = []
-    for i in range(len(Data_plot_train['sex'])):
-        data.append(('M'*int(Data_plot_train['sex'][i]) + 'F'*(1 - int(Data_plot_train['sex'][i]))))
-    print_df = pd.DataFrame(data, columns=['sex'])
-    print_df['sex'].hist(label="train", alpha=0.5, ax=axs[1, 1])
+
     axs[1, 1].set_title('Sex')
     axs[1, 1].set_axisbelow(True)
     fig.tight_layout()

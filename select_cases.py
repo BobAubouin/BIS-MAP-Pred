@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import vitaldb
 from os.path import exists
 
-perso_data = pd.read_csv("info_clinic_vitalDB.csv")
+perso_data = pd.read_csv("./data/info_clinic_vitalDB.csv")
 perso_data.dropna(subset=["caseid"], inplace=True)
 print(f"Initial number of cases: {perso_data.count()[0]}")
 
