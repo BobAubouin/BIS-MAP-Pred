@@ -28,7 +28,7 @@ Patients_test = pd.read_csv("./data/Patients_test.csv", index_col=0)
 
 # %% Undersample data
 
-step = 90  # Undersampling step
+step = 120  # Undersampling step
 
 
 Patients_test_full = Patients_test.copy()
@@ -287,9 +287,6 @@ for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR', 'MLPR
 
         # plot_surface(rg, scaler, feature)
 
-    # results_BIS.to_csv("./results_BIS.csv")
-    # results_MAP.to_csv("./results_MAP.csv")
-
     print(
         f"***{name_rg:-^30s}***\n"
         f"***{' Test Results ':-^30s}***")
@@ -305,15 +302,14 @@ for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR', 'MLPR
     df = pd.concat([pd.DataFrame({'name_rg': name_rg}, index=[0]), df_bis, df_map], axis=1)
     results_df = pd.concat([results_df, df], axis=0)
 
+results_BIS.to_csv("./outputs/results_BIS.csv")
+results_MAP.to_csv("./outputs/results_MAP.csv")
 print('\n')
 styler = results_df.style
 styler.hide(axis='index')
 # styler.format(precision=2)
 print(styler.to_latex())
 
-# print("\n\n                 ------ Train Results ------")
-# compute_metrics(Train_data_BIS)
-# compute_metrics(Train_data_MAP)
-# plot_results(Test_data_BIS, Test_data_MAP, Train_data_BIS, Train_data_MAP)
+plot_results(Test_data_BIS, Test_data_MAP, Train_data_BIS, Train_data_MAP)
 
 # plot_case(results_BIS, results_MAP, Patients_test_full, min_case_bis, min_case_map, max_case_bis, max_case_map)
