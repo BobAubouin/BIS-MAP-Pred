@@ -50,8 +50,6 @@ def compute_metrics(data):
             true_col = col_name
         elif 'pred' in col_name:
             pred_col = col_name
-    print(pred_col)
-    print(true_col)
 
     for case in data['case_id'].unique():
         case_data = data[data['case_id'] == case]
@@ -94,41 +92,41 @@ def compute_metrics(data):
 
     col_name = pred_col[5:]
     print("                 ______   "+col_name+" results   ______")
-    print("     MDPE \t & \t MDAPE \t & \t RMSE       ")
+    print(f'MDPE: {round(MDPE, 1)} +/- {round(SD_MDPE, 1)}')
+    print(f'MDAPE: {round(MDAPE, 1)} +/- {round(SD_MDAPE, 1)}')
+    print(f'RMSE: {round(RMSE, 1)} +/- {round(SD_RMSE, 1)}')
 
-    print("$" + str(round(MDPE, 1)) + " \pm " + str(round(SD_MDPE, 1))
-          + "$ & $" + str(round(MDAPE, 1)) + " \pm " + str(round(SD_MDAPE, 1))
-          + "$ & $" + str(round(RMSE, 1)) + " \pm " + str(round(SD_RMSE, 1)) + "$")
     df = pd.DataFrame({'MDPE': f"${round(MDPE, 1)} \pm {round(SD_MDPE, 1)}$",
                        'MDAPE': f"${round(MDAPE, 1)} \pm {round(SD_MDAPE, 1)}$",
                        'RMSE': f"${round(RMSE, 1)} \pm {round(SD_RMSE, 1)}$"},
-                       index=[0])
+                      index=[0])
     return case_rmse_max, case_rmse_min, df
 
 
-def plot_results(data_BIS, data_MAP, data_train_BIS=pd.DataFrame(), data_train_MAP=pd.DataFrame()):
-    """plot the result of the prediction with bokeh module"""
+def plot_results(data_BIS, data_MAP, data_train_BIS=None, data_train_MAP=None):
+    """plot the result of the prediction with bokeh module."""
+    # first the BIS plot
     y_true_test = data_BIS["true_BIS"].values
     y_pred_test = data_BIS["pred_BIS"].values
-    if not data_train_BIS.empty:
+    if data_train_BIS is not None:
         train = True
         y_true_train = data_train_BIS["true_BIS"].values
         y_pred_train = data_train_BIS["pred_BIS"].values
     else:
         train = False
 
-    fig1 = figure(plot_width=900, plot_height=450, title="Data (blue) Vs Fitted data (red)")
-    fig1.line(range(0, len(y_true_test)), y_true_test, line_color='navy', legend_label="y")
-    fig1.line(range(0, len(y_pred_test)), y_pred_test, line_color='red', legend_label="y predicted")
+    fig1 = figure(width=900, height=450, title="Data (blue) Vs Fitted data (red)")
+    fig1.line(np.arange(0, len(y_true_test)), y_true_test, line_color='navy', legend_label="y")
+    fig1.line(np.arange(0, len(y_pred_test)), y_pred_test, line_color='red', legend_label="y predicted")
     fig1.xaxis.axis_label = "time [s]"
     fig1.yaxis.axis_label = "y"
 
-    fig2 = figure(plot_width=900, plot_height=450, title="Fitting error")
-    fig2.line(range(0, len(y_true_test)), y_true_test-y_pred_test, line_color='navy', legend_label="y")
+    fig2 = figure(width=900, height=450, title="Fitting error")
+    fig2.line(np.arange(0, len(y_true_test)), y_true_test-y_pred_test, line_color='navy', legend_label="y")
     fig2.xaxis.axis_label = "time [s]"
     fig2.yaxis.axis_label = "y"
 
-    fig3 = figure(plot_width=900, plot_height=450, title="BIS")
+    fig3 = figure(width=900, height=450, title="BIS")
     fig3.circle(y_true_test, y_pred_test, legend_label='y', size=2, color="navy", alpha=0.1)
     if train:
         fig3.circle(y_true_train, y_pred_train, legend_label='train', size=2, color="green", alpha=0.1)
@@ -141,35 +139,36 @@ def plot_results(data_BIS, data_MAP, data_train_BIS=pd.DataFrame(), data_train_M
     fig3.x_range = Range1d(y_true_test.min(), y_true_test.max())
     fig3.y_range = Range1d(y_true_test.min(), y_true_test.max())
 
-    fig4 = figure(plot_width=900, plot_height=450, title="Trained fit")
+    fig4 = figure(width=900, height=450, title="Trained fit")
     if train:
-        fig4 = figure(plot_width=900, plot_height=450, title="Data (blue) Vs Fitted data (red)")
-        fig4.line(range(0, len(y_true_train)), y_true_train, line_color='navy', legend_label="y traint rue")
-        fig4.line(range(0, len(y_pred_train)), y_pred_train, line_color='red', legend_label="y train predicted")
+        fig4 = figure(width=900, height=450, title="Data (blue) Vs Fitted data (red)")
+        fig4.line(np.arange(0, len(y_true_train)), y_true_train, line_color='navy', legend_label="y traint rue")
+        fig4.line(np.arange(0, len(y_pred_train)), y_pred_train, line_color='red', legend_label="y train predicted")
         fig4.xaxis.axis_label = "time [s]"
         fig4.yaxis.axis_label = "y"
 
     layout = row(column(fig1, fig2), column(fig3, fig4))
     show(layout)
 
+    # then the MAP plot
     y_true_test = data_MAP["true_MAP"].values
     y_pred_test = data_MAP["pred_MAP"].values
     if train:
         y_true_train = data_train_MAP["true_MAP"].values
         y_pred_train = data_train_MAP["pred_MAP"].values
 
-    fig1 = figure(plot_width=900, plot_height=450, title="Data (blue) Vs Fitted data (red)")
-    fig1.line(range(0, len(y_true_test)), y_true_test, line_color='navy', legend_label="y")
-    fig1.line(range(0, len(y_pred_test)), y_pred_test, line_color='red', legend_label="y predicted")
+    fig1 = figure(width=900, height=450, title="Data (blue) Vs Fitted data (red)")
+    fig1.line(np.arange(0, len(y_true_test)), y_true_test, line_color='navy', legend_label="y")
+    fig1.line(np.arange(0, len(y_pred_test)), y_pred_test, line_color='red', legend_label="y predicted")
     fig1.xaxis.axis_label = "time [s]"
     fig1.yaxis.axis_label = "y"
 
-    fig2 = figure(plot_width=900, plot_height=450, title="Fitting error")
-    fig2.line(range(0, len(y_true_test)), y_true_test-y_pred_test, line_color='navy', legend_label="y")
+    fig2 = figure(width=900, height=450, title="Fitting error")
+    fig2.line(np.arange(0, len(y_true_test)), y_true_test-y_pred_test, line_color='navy', legend_label="y")
     fig2.xaxis.axis_label = "time [s]"
     fig2.yaxis.axis_label = "y"
 
-    fig3 = figure(plot_width=900, plot_height=450, title="MAP")
+    fig3 = figure(width=900, height=450, title="MAP")
     fig3.circle(y_true_test, y_pred_test, legend_label='y', size=2, color="navy", alpha=0.1)
     if train:
         fig3.circle(y_true_train, y_pred_train, legend_label='train', size=2, color="green", alpha=0.1)
@@ -182,11 +181,11 @@ def plot_results(data_BIS, data_MAP, data_train_BIS=pd.DataFrame(), data_train_M
     fig3.x_range = Range1d(y_true_test.min(), y_true_test.max())
     fig3.y_range = Range1d(y_true_test.min(), y_true_test.max())
 
-    fig4 = figure(plot_width=900, plot_height=450, title="Trained fit")
+    fig4 = figure(width=900, height=450, title="Trained fit")
     if train:
-        fig4 = figure(plot_width=900, plot_height=450, title="Data (blue) Vs Fitted data (red)")
-        fig4.line(range(0, len(y_true_train)), y_true_train, line_color='navy', legend_label="y traint rue")
-        fig4.line(range(0, len(y_pred_train)), y_pred_train, line_color='red', legend_label="y train predicted")
+        fig4 = figure(width=900, height=450, title="Data (blue) Vs Fitted data (red)")
+        fig4.line(np.arange(0, len(y_true_train)), y_true_train, line_color='navy', legend_label="y traint rue")
+        fig4.line(np.arange(0, len(y_pred_train)), y_pred_train, line_color='red', legend_label="y train predicted")
         fig4.xaxis.axis_label = "time [s]"
         fig4.yaxis.axis_label = "MAP (mmHg)"
 
@@ -198,7 +197,7 @@ def plot_one_fig(case_full, case_pred, output, columns_pred, columns_pred_full):
 
     color = list(bokeh.palettes.Category10[max(3, len(columns_pred)+1+len(columns_pred_full))])
 
-    fig = figure(plot_width=500, plot_height=250)
+    fig = figure(width=900, height=250)
     i = 0
     fig.line(case_full['Time'].values/60, case_full[output].values,
              line_color=color[i], legend_label="True " + output, line_width=3)
@@ -386,18 +385,18 @@ def plot_dresults(data_BIS, data_MAP, data_train_BIS=pd.DataFrame(), data_train_
     else:
         train = False
 
-    fig1 = figure(plot_width=900, plot_height=450, title="Data (blue) Vs Fitted data (red)")
-    fig1.line(range(0, len(y_true_test)), y_true_test, line_color='navy', legend_label="y")
-    fig1.line(range(0, len(y_pred_test)), y_pred_test, line_color='red', legend_label="y predicted")
+    fig1 = figure(width=900, height=450, title="Data (blue) Vs Fitted data (red)")
+    fig1.line(np.arange(0, len(y_true_test)), y_true_test, line_color='navy', legend_label="y")
+    fig1.line(np.arange(0, len(y_pred_test)), y_pred_test, line_color='red', legend_label="y predicted")
     fig1.xaxis.axis_label = "time [s]"
     fig1.yaxis.axis_label = "y"
 
-    fig2 = figure(plot_width=900, plot_height=450, title="Fitting error")
-    fig2.line(range(0, len(y_true_test)), y_true_test-y_pred_test, line_color='navy', legend_label="y")
+    fig2 = figure(width=900, height=450, title="Fitting error")
+    fig2.line(np.arange(0, len(y_true_test)), y_true_test-y_pred_test, line_color='navy', legend_label="y")
     fig2.xaxis.axis_label = "time [s]"
     fig2.yaxis.axis_label = "y"
 
-    fig3 = figure(plot_width=900, plot_height=450, title="BIS")
+    fig3 = figure(width=900, height=450, title="BIS")
     fig3.circle(y_true_test, y_pred_test, legend_label='y', size=2, color="navy", alpha=0.1)
     if train:
         fig3.circle(y_true_train, y_pred_train, legend_label='train', size=2, color="green", alpha=0.1)
@@ -410,11 +409,11 @@ def plot_dresults(data_BIS, data_MAP, data_train_BIS=pd.DataFrame(), data_train_
     fig3.x_range = Range1d(y_true_test.min(), y_true_test.max())
     fig3.y_range = Range1d(y_true_test.min(), y_true_test.max())
 
-    fig4 = figure(plot_width=900, plot_height=450, title="Trained fit")
+    fig4 = figure(width=900, height=450, title="Trained fit")
     if train:
-        fig4 = figure(plot_width=900, plot_height=450, title="Data (blue) Vs Fitted data (red)")
-        fig4.line(range(0, len(y_true_train)), y_true_train, line_color='navy', legend_label="y traint rue")
-        fig4.line(range(0, len(y_pred_train)), y_pred_train, line_color='red', legend_label="y train predicted")
+        fig4 = figure(width=900, height=450, title="Data (blue) Vs Fitted data (red)")
+        fig4.line(np.arange(0, len(y_true_train)), y_true_train, line_color='navy', legend_label="y traint rue")
+        fig4.line(np.arange(0, len(y_pred_train)), y_pred_train, line_color='red', legend_label="y train predicted")
         fig4.xaxis.axis_label = "time [s]"
         fig4.yaxis.axis_label = "y"
 
@@ -427,18 +426,18 @@ def plot_dresults(data_BIS, data_MAP, data_train_BIS=pd.DataFrame(), data_train_
         y_true_train = data_train_MAP["true_dMAP"].values
         y_pred_train = data_train_MAP["pred_dMAP"].values
 
-    fig1 = figure(plot_width=900, plot_height=450, title="Data (blue) Vs Fitted data (red)")
-    fig1.line(range(0, len(y_true_test)), y_true_test, line_color='navy', legend_label="y")
-    fig1.line(range(0, len(y_pred_test)), y_pred_test, line_color='red', legend_label="y predicted")
+    fig1 = figure(width=900, height=450, title="Data (blue) Vs Fitted data (red)")
+    fig1.line(np.arange(0, len(y_true_test)), y_true_test, line_color='navy', legend_label="y")
+    fig1.line(np.arange(0, len(y_pred_test)), y_pred_test, line_color='red', legend_label="y predicted")
     fig1.xaxis.axis_label = "time [s]"
     fig1.yaxis.axis_label = "y"
 
-    fig2 = figure(plot_width=900, plot_height=450, title="Fitting error")
-    fig2.line(range(0, len(y_true_test)), y_true_test-y_pred_test, line_color='navy', legend_label="y")
+    fig2 = figure(width=900, height=450, title="Fitting error")
+    fig2.line(np.arange(0, len(y_true_test)), y_true_test-y_pred_test, line_color='navy', legend_label="y")
     fig2.xaxis.axis_label = "time [s]"
     fig2.yaxis.axis_label = "y"
 
-    fig3 = figure(plot_width=900, plot_height=450, title="MAP")
+    fig3 = figure(width=900, height=450, title="MAP")
     fig3.circle(y_true_test, y_pred_test, legend_label='y', size=2, color="navy", alpha=0.1)
     if train:
         fig3.circle(y_true_train, y_pred_train, legend_label='train', size=2, color="green", alpha=0.1)
@@ -451,11 +450,11 @@ def plot_dresults(data_BIS, data_MAP, data_train_BIS=pd.DataFrame(), data_train_
     fig3.x_range = Range1d(y_true_test.min(), y_true_test.max())
     fig3.y_range = Range1d(y_true_test.min(), y_true_test.max())
 
-    fig4 = figure(plot_width=900, plot_height=450, title="Trained fit")
+    fig4 = figure(width=900, height=450, title="Trained fit")
     if train:
-        fig4 = figure(plot_width=900, plot_height=450, title="Data (blue) Vs Fitted data (red)")
-        fig4.line(range(0, len(y_true_train)), y_true_train, line_color='navy', legend_label="y traint rue")
-        fig4.line(range(0, len(y_pred_train)), y_pred_train, line_color='red', legend_label="y train predicted")
+        fig4 = figure(width=900, height=450, title="Data (blue) Vs Fitted data (red)")
+        fig4.line(np.arange(0, len(y_true_train)), y_true_train, line_color='navy', legend_label="y traint rue")
+        fig4.line(np.arange(0, len(y_pred_train)), y_pred_train, line_color='red', legend_label="y train predicted")
         fig4.xaxis.axis_label = "time [s]"
         fig4.yaxis.axis_label = "MAP (mmHg)"
 
