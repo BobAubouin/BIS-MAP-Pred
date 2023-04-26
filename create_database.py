@@ -8,7 +8,6 @@ import python_anesthesia_simulator as pas
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import matplotlib
-from scipy.signal import lsim
 # local
 try:
     sys.path.append('/home/aubouinb/ownCloud/Anesthesie/Science/Bob/Code/utilities')
@@ -90,6 +89,7 @@ for caseid, Patient_df in cases.groupby('caseid'):
     print(caseid)
     # find MAP baseline
     Patient_df = Patient_df.copy()
+    Patient_df.reset_index(inplace=True)
     Map_base_case = Patient_df['NI_MAP'].fillna(method='bfill')[0]
     Patient_df.insert(len(Patient_df.columns), "MAP_base_case", Map_base_case)
 
@@ -223,26 +223,15 @@ for caseid, Patient_df in cases.groupby('caseid'):
 
     # Eleveld model
     Patient_simu = pas.Patient([age, height, weight, sex], model_propo=model, model_remi=model)
-    A_propo = Patient_simu.propo_pk.continuous_sys.A
-    B_propo = Patient_simu.propo_pk.continuous_sys.B
-    C_propo = Patient_simu.propo_pk.continuous_sys.C
-    D_propo = Patient_simu.propo_pk.continuous_sys.D
-    A_remi = Patient_simu.remi_pk.continuous_sys.A
-    B_remi = Patient_simu.remi_pk.continuous_sys.B
-    C_remi = Patient_simu.remi_pk.continuous_sys.C
-    D_remi = Patient_simu.remi_pk.continuous_sys.D
+    df_simu = Patient_simu.full_sim(u_propo=Patient_df['Propofol']*20/3600,
+                                    u_remi=Patient_df['Remifentanil']*20/3600)
 
-    _, _, X_propo = lsim((A_propo, B_propo, C_propo, D_propo),
-                         U=Patient_df['Propofol']*20/3600, T=np.arange(0, len(Patient_df)))
-    _, _, X_remi = lsim((A_remi, B_remi, C_remi, D_remi),
-                        U=Patient_df['Remifentanil']*20/3600, T=np.arange(0, len(Patient_df)))
-
-    Patient_df["Cp_Prop_Eleveld"] = X_propo[:, 0]
-    Patient_df["Cp_Rem_Eleveld"] = X_remi[:, 0]
-    Patient_df["Ce_Prop_Eleveld"] = X_propo[:, 3]
-    Patient_df["Ce_Rem_Eleveld"] = X_remi[:, 3]
-    Patient_df["Ce_Prop_MAP_Eleveld"] = (X_propo[:, 4] + X_propo[:, 5])/2
-    Patient_df["Ce_Rem_MAP_Eleveld"] = X_remi[:, 4]
+    Patient_df["Cp_Prop_Eleveld"] = df_simu['x_propo_1']
+    Patient_df["Cp_Rem_Eleveld"] = df_simu['x_remi_1']
+    Patient_df["Ce_Prop_Eleveld"] = df_simu['x_propo_4']
+    Patient_df["Ce_Rem_Eleveld"] = df_simu['x_remi_4']
+    Patient_df["Ce_Prop_MAP_Eleveld"] = (df_simu['x_propo_5'] + df_simu['x_propo_6'])/2
+    Patient_df["Ce_Rem_MAP_Eleveld"] = df_simu['x_remi_5']
 
     # add delayed output
     Patient_df.insert(len(Patient_df.columns), "BIS_plus_30", Patient_df['BIS'].shift(-30))
