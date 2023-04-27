@@ -28,7 +28,7 @@ plt.rc('font', family='serif')
 def compute_metrics(data):
     """compute the metrics MDPE +/- SD, MDAPE +/- SD and RMSE +/- SD for a prediction signals 
     over a patient population.
-    Inputs:     - data is a panda dataframe with the fiels case_id, true_*, pred_*
+    Inputs:     - data is a panda dataframe with the fiels caseid, true_*, pred_*
     Output:     -  caseid of the best and worst RMSE
     print also the results to copy them in a latex table"""
 
@@ -51,8 +51,8 @@ def compute_metrics(data):
         elif 'pred' in col_name:
             pred_col = col_name
 
-    for case in data['case_id'].unique():
-        case_data = data[data['case_id'] == case]
+    for case in data['caseid'].unique():
+        case_data = data[data['caseid'] == case]
         case_length = len(case_data)
         PE = 100 * (case_data[true_col].values - case_data[pred_col].values)/case_data[true_col].values
 
@@ -106,12 +106,19 @@ def compute_metrics(data):
 def plot_results(data_BIS, data_MAP, data_train_BIS=None, data_train_MAP=None):
     """plot the result of the prediction with bokeh module."""
     # first the BIS plot
-    y_true_test = data_BIS["true_BIS"].values
-    y_pred_test = data_BIS["pred_BIS"].values
+    # get the data of the column with 'true_BIS' and 'pred_BIS'
+    y_true_test = data_BIS[[
+        col_name for col_name in data_BIS.columns if col_name.startswith('true_BIS')]].values
+    print(y_true_test)
+    y_pred_test = data_BIS[[
+        col_name for col_name in data_BIS.columns if col_name.startswith('pred_BIS')]].values
+
     if data_train_BIS is not None:
         train = True
-        y_true_train = data_train_BIS["true_BIS"].values
-        y_pred_train = data_train_BIS["pred_BIS"].values
+        y_true_train = data_train_BIS[[
+            col_name for col_name in data_train_BIS.columns if col_name.startswith('true_BIS')]].values
+        y_pred_train = data_train_BIS[[
+            col_name for col_name in data_train_BIS.columns if col_name.startswith('pred_BIS')]].values
     else:
         train = False
 
@@ -151,11 +158,15 @@ def plot_results(data_BIS, data_MAP, data_train_BIS=None, data_train_MAP=None):
     show(layout)
 
     # then the MAP plot
-    y_true_test = data_MAP["true_MAP"].values
-    y_pred_test = data_MAP["pred_MAP"].values
+    y_true_test = data_MAP[[
+        col_name for col_name in data_MAP.columns if col_name.startswith('true_MAP')]].values
+    y_pred_test = data_MAP[[
+        col_name for col_name in data_MAP.columns if col_name.startswith('pred_MAP')]].values
     if train:
-        y_true_train = data_train_MAP["true_MAP"].values
-        y_pred_train = data_train_MAP["pred_MAP"].values
+        y_true_train = data_train_MAP[[
+            col_name for col_name in data_train_MAP.columns if col_name.startswith('true_BIS')]].values
+        y_pred_train = data_train_MAP[[
+            col_name for col_name in data_train_MAP.columns if col_name.startswith('pred_BIS')]].values
 
     fig1 = figure(width=900, height=450, title="Data (blue) Vs Fitted data (red)")
     fig1.line(np.arange(0, len(y_true_test)), y_true_test, line_color='navy', legend_label="y")

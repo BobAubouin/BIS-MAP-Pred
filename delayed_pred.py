@@ -51,6 +51,7 @@ Ce_map_eleveld = ['Ce_Prop_MAP_Eleveld', 'Ce_Rem_MAP_Eleveld']
 Cplasma_eleveld = ['Cp_Prop_Eleveld', 'Cp_Rem_Eleveld']
 name_rg = 'SVR'
 results_df = pd.DataFrame()
+output_df = pd.DataFrame()
 for delay in [0, 30, 120, 300, 600]:  # Delay in seconds
 
     if delay == 0:
@@ -75,22 +76,15 @@ for delay in [0, 30, 120, 300, 600]:  # Delay in seconds
     pca_bool = False
     regressors = {}
 
-    try:
-        results_BIS = pd.read_csv("./data/results_"+output[0]+".csv", index_col=0)
-        results_MAP = pd.read_csv("./data/results_"+output[1]+".csv", index_col=0)
-    except:
-        results_BIS = Patients_test_BIS[['Time', 'caseid', output[0]]].copy()
-        results_MAP = Patients_test_MAP[['Time', 'caseid', output[1]]].copy()
-
     Train_data_BIS = pd.DataFrame()
     Test_data_BIS = pd.DataFrame()
-    Train_data_BIS['case_id'] = Patients_train_BIS['caseid']
-    Test_data_BIS['case_id'] = Patients_test_BIS['caseid']
+    Train_data_BIS['caseid'] = Patients_train_BIS['caseid']
+    Test_data_BIS['caseid'] = Patients_test_BIS['caseid']
 
     Train_data_MAP = pd.DataFrame()
     Test_data_MAP = pd.DataFrame()
-    Train_data_MAP['case_id'] = Patients_train_MAP['caseid']
-    Test_data_MAP['case_id'] = Patients_test_MAP['caseid']
+    Train_data_MAP['caseid'] = Patients_train_MAP['caseid']
+    Test_data_MAP['caseid'] = Patients_test_MAP['caseid']
 
     i = 0
 
@@ -142,14 +136,17 @@ for delay in [0, 30, 120, 300, 600]:  # Delay in seconds
         y_predicted = rg.predict(X_test)
 
         col_name = 'pred_' + y_col + '_' + name_rg
-        if 'BIS' in y_col:
+        if y_col == 'BIS':
             Test_data_BIS[f'true_{y_col}'] = Patients_test[y_col]
             Test_data_BIS[f'pred_{y_col}'] = y_predicted
-            results_BIS.loc[:, col_name] = y_predicted
+            temp = Test_data_BIS[['caseid', 'Time', f'pred_{y_col}']].copy()
         else:
             Test_data_MAP[f'true_{y_col}'] = Patients_test[y_col]
             Test_data_MAP[f'pred_{y_col}'] = y_predicted
-            results_MAP.loc[:, col_name] = y_predicted
+            temp = Test_data_MAP[['caseid', 'Time', 'pred_' + y_col]].copy()
+        temp.rename(columns={'pred_' + y_col: f'{y_col}_{name_rg}_{delay}'}, inplace=True)
+        output_df = pd.merge(output_df, temp,
+                             on=['caseid', 'Time'], how='left')
         # -----------------test performances on train cases--------------------
 
         X_train = Patients_train[X_col].values
@@ -183,6 +180,8 @@ for delay in [0, 30, 120, 300, 600]:  # Delay in seconds
     df = pd.concat([pd.DataFrame({'delay': delay}, index=[0]), df_bis, df_map], axis=1)
     results_df = pd.concat([results_df, df], axis=0)
 
+output_df.to_csv("./outputs/delay.csv")
+
 print('\n')
 styler = results_df[['delay', 'MDAPE_BIS', 'MDAPE_MAP']].style
 styler.hide(axis='index')
@@ -191,6 +190,6 @@ print(styler.to_latex())
 # print("\n\n                 ------ Train Results ------")
 # compute_metrics(Train_data_BIS)
 # compute_metrics(Train_data_MAP)
-# plot_results(Test_data_BIS, Test_data_MAP, Train_data_BIS, Train_data_MAP)
+plot_results(Test_data_BIS, Test_data_MAP, Train_data_BIS, Train_data_MAP)
 
 # plot_case(results_BIS, results_MAP, Patients_test_full, min_case_bis, min_case_map, max_case_bis, max_case_map)

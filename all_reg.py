@@ -5,7 +5,7 @@ Created on Wed May 18 08:47:45 2022
 @author: aubouinb
 """
 
-
+# %% Import libraries
 import pickle
 import numpy as np
 import pandas as pd
@@ -30,8 +30,6 @@ Patients_test = pd.read_csv("./data/Patients_test.csv", index_col=0)
 
 step = 120  # Undersampling step
 
-
-Patients_test_full = Patients_test.copy()
 
 Patients_train_BIS = Patients_train[Patients_train['full_BIS'] == 0]
 Patients_test_BIS = Patients_test[Patients_test['full_BIS'] == 0]
@@ -77,28 +75,24 @@ Patients_train_MAP = Patients_train_MAP[X_col + ['caseid', 'MAP', 'train_set']].
 Patients_test_MAP = Patients_test_MAP[X_col + ['caseid', 'MAP', 'Time']].dropna()
 
 results_df = pd.DataFrame()
+output_df = Patients_test[['caseid', 'Time']]
 for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR', 'MLPRegressor']:
     filename = './saved_reg/reg_' + name_rg + '_feat_' + feature + '.pkl'
     poly_degree = 1
     pca_bool = False
     regressors = {}
 
-    try:
-        results_BIS = pd.read_csv("./data/results_BIS.csv", index_col=0)
-        results_MAP = pd.read_csv("./data/results_MAP.csv", index_col=0)
-    except:
-        results_BIS = Patients_test_BIS[['Time', 'caseid', 'BIS']].copy()
-        results_MAP = Patients_test_MAP[['Time', 'caseid', 'MAP']].copy()
-
     Train_data_BIS = pd.DataFrame()
     Test_data_BIS = pd.DataFrame()
-    Train_data_BIS['case_id'] = Patients_train_BIS['caseid']
-    Test_data_BIS['case_id'] = Patients_test_BIS['caseid']
+    Train_data_BIS['caseid'] = Patients_train_BIS['caseid']
+    Test_data_BIS['caseid'] = Patients_test_BIS['caseid']
+    Test_data_BIS['Time'] = Patients_test_BIS['Time']
 
     Train_data_MAP = pd.DataFrame()
     Test_data_MAP = pd.DataFrame()
-    Train_data_MAP['case_id'] = Patients_train_MAP['caseid']
-    Test_data_MAP['case_id'] = Patients_test_MAP['caseid']
+    Train_data_MAP['caseid'] = Patients_train_MAP['caseid']
+    Test_data_MAP['caseid'] = Patients_test_MAP['caseid']
+    Test_data_MAP['Time'] = Patients_test_MAP['Time']
 
     i = 0
     for y_col in ['BIS', 'MAP']:
@@ -245,11 +239,16 @@ for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR', 'MLPR
         if y_col == 'BIS':
             Test_data_BIS['true_' + y_col] = Patients_test[y_col]
             Test_data_BIS['pred_' + y_col] = y_predicted
-            results_BIS.loc[:, col_name] = y_predicted
+            temp = Test_data_BIS[['caseid', 'Time', 'pred_' + y_col]]
+            temp.rename(columns={'pred_' + y_col: y_col + '_' + name_rg}, inplace=True)
+
         else:
             Test_data_MAP['true_' + y_col] = Patients_test[y_col]
             Test_data_MAP['pred_' + y_col] = y_predicted
-            results_MAP.loc[:, col_name] = y_predicted
+            temp = Test_data_MAP[['caseid', 'Time', 'pred_' + y_col]]
+            temp.rename(columns={'pred_' + y_col: y_col + '_' + name_rg}, inplace=True)
+        output_df = pd.merge(output_df, temp,
+                             on=['caseid', 'Time'], how='left')
         # -----------------test performances on train cases--------------------
 
         if name_rg in ['ElasticNet', 'TheilSenRegressor', 'BayesianRidge',
@@ -302,8 +301,7 @@ for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR', 'MLPR
     df = pd.concat([pd.DataFrame({'name_rg': name_rg}, index=[0]), df_bis, df_map], axis=1)
     results_df = pd.concat([results_df, df], axis=0)
 
-results_BIS.to_csv("./outputs/results_BIS.csv")
-results_MAP.to_csv("./outputs/results_MAP.csv")
+output_df.to_csv("./outputs/all_reg.csv")
 print('\n')
 styler = results_df.style
 styler.hide(axis='index')
@@ -313,3 +311,5 @@ print(styler.to_latex())
 plot_results(Test_data_BIS, Test_data_MAP, Train_data_BIS, Train_data_MAP)
 
 # plot_case(results_BIS, results_MAP, Patients_test_full, min_case_bis, min_case_map, max_case_bis, max_case_map)
+
+# %%

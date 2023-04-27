@@ -19,7 +19,7 @@ Patients_test['MAP'].fillna(0, inplace=True)
 
 # %% Perform simulation
 model_name_list = ['Eleveld', 'Schnider-Minto', 'Marsh-Minto']
-column = ['case_id', 'full_BIS', 'full_MAP', 'True_BIS', 'True_MAP']
+column = ['caseid', 'Time', 'full_BIS', 'full_MAP', 'True_BIS', 'True_MAP']
 for model_name in model_name_list:
     column.append('pred_BIS_' + model_name)
     column.append('pred_MAP_' + model_name)
@@ -40,7 +40,7 @@ for caseid, Patient_df in Patients_test.groupby('caseid'):
 
     Patient_df.reset_index(inplace=True)
     Output_df_temp = pd.DataFrame(columns=column)
-    Output_df_temp['case_id'] = [caseid]*len(Patient_df)
+    Output_df_temp['caseid'] = [caseid]*len(Patient_df)
 
     # create model
     MAP_base_case = Patient_df['MAP_base_case'].iloc[0]
@@ -77,6 +77,7 @@ for caseid, Patient_df in Patients_test.groupby('caseid'):
     Output_df_temp['full_MAP'] = Patient_df['full_MAP']
     Output_df_temp['true_BIS'] = Patient_df['BIS']
     Output_df_temp['true_MAP'] = Patient_df['MAP']
+    Output_df_temp['Time'] = Patient_df['Time']
     Output_df = pd.concat([Output_df, Output_df_temp], ignore_index=True)
 
     # Output_df_temp['pred_BIS'] = Output_df_temp['pred_BIS'].diff()
@@ -106,14 +107,16 @@ for caseid, Patient_df in Patients_test.groupby('caseid'):
         plt.pause(0.05)
     i += 1
 
+Output_df.to_csv('outputs/standard_model.csv', index=False)
+
 Output_df_BIS = Output_df[Output_df['full_BIS'] == 0]
-Output_df_BIS_Schnider = Output_df_BIS[['pred_BIS_Schnider-Minto', 'true_BIS', 'case_id']]
-Output_df_BIS_Marsh = Output_df_BIS[['pred_BIS_Marsh-Minto', 'true_BIS', 'case_id']]
-Output_df_BIS_Eleveld = Output_df_BIS[['pred_BIS_Eleveld', 'true_BIS', 'case_id']]
+Output_df_BIS_Schnider = Output_df_BIS[['pred_BIS_Schnider-Minto', 'true_BIS', 'caseid']]
+Output_df_BIS_Marsh = Output_df_BIS[['pred_BIS_Marsh-Minto', 'true_BIS', 'caseid']]
+Output_df_BIS_Eleveld = Output_df_BIS[['pred_BIS_Eleveld', 'true_BIS', 'caseid']]
 Output_df_MAP = Output_df[Output_df['full_MAP'] == 0]
-Output_df_MAP_Schnider = Output_df_MAP[['pred_MAP_Schnider-Minto', 'true_MAP', 'case_id']]
-Output_df_MAP_Marsh = Output_df_MAP[['pred_MAP_Marsh-Minto', 'true_MAP', 'case_id']]
-Output_df_MAP_Eleveld = Output_df_MAP[['pred_MAP_Eleveld', 'true_MAP', 'case_id']]
+Output_df_MAP_Schnider = Output_df_MAP[['pred_MAP_Schnider-Minto', 'true_MAP', 'caseid']]
+Output_df_MAP_Marsh = Output_df_MAP[['pred_MAP_Marsh-Minto', 'true_MAP', 'caseid']]
+Output_df_MAP_Eleveld = Output_df_MAP[['pred_MAP_Eleveld', 'true_MAP', 'caseid']]
 
 Output_df_BIS_Schnider = Output_df_BIS_Schnider[Output_df_BIS_Schnider['true_BIS'] != 0]
 Output_df_BIS_Marsh = Output_df_BIS_Marsh[Output_df_BIS_Marsh['true_BIS'] != 0]
