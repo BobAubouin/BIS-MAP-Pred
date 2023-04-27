@@ -12,14 +12,19 @@ dataframe.Target_Remi.fillna(method="ffill", inplace=True)
 
 # Explore data
 dataframe_by_caseid = dataframe.groupby("caseid")
-Propo_freq = dataframe_by_caseid.Target_Propo.diff().astype(bool).sum() / \
-    (dataframe_by_caseid.Target_Propo.count()/60/60)
+Propo_freq = dataframe_by_caseid.Target_Propo.count()/60/60
+Remi_freq = dataframe_by_caseid.Target_Remi.count()/60/60
+for caseid, df_case in dataframe_by_caseid:
+    Propo_freq[caseid] = df_case.Target_Propo.diff().astype(bool).sum() / \
+        (df_case.Target_Propo.count()/60/60)
+    Remi_freq[caseid] = df_case.Target_Remi.diff().astype(bool).sum() / \
+        (df_case.Target_Remi.count()/60/60)
 Propo_freq.plot(kind="hist", bins=20)
+plt.title("Propofol frequency of target change")
 plt.show()
 
-Remi_freq = dataframe_by_caseid.Target_Remi.diff().astype(bool).sum() / \
-    (dataframe_by_caseid.Target_Remi.count()/60/60)
 Remi_freq.plot(kind="hist", bins=20)
+plt.title("Remifentanil frequency of target change")
 plt.show()
 
 # plot case with max and min frequency
@@ -68,8 +73,8 @@ print("nb point test: " + str(len(Patients_test['BIS'])))
 
 print_dist = True
 
-Patients_train = pd.read_csv("./Patients_train.csv", index_col=0)
-Patients_test = pd.read_csv("./Patients_test.csv", index_col=0)
+Patients_train = pd.read_csv("./data/Patients_train.csv", index_col=0)
+Patients_test = pd.read_csv("./data/Patients_test.csv", index_col=0)
 
 if print_dist:
 
