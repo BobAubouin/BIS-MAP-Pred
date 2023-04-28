@@ -17,6 +17,7 @@ Patients_test.rename({'full_BIS': 'full'}, axis=1, inplace=True)
 # scale the inputs
 Patients_test['Propofol'] = Patients_test['Propofol']*20/360
 Patients_test['Remifentanil'] = Patients_test['Remifentanil']*20/360
+Patients_test['SQI'].fillna(0, inplace=True)
 Patients_test.to_csv("./lee_code/data.csv", index=False)
 
 
