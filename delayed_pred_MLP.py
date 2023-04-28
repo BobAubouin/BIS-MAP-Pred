@@ -49,7 +49,7 @@ cov = ['age', 'sex', 'height', 'weight']
 Ce_bis_eleveld = ['Ce_Prop_Eleveld', 'Ce_Rem_Eleveld']
 Ce_map_eleveld = ['Ce_Prop_MAP_Eleveld', 'Ce_Rem_MAP_Eleveld']
 Cplasma_eleveld = ['Cp_Prop_Eleveld', 'Cp_Rem_Eleveld']
-name_rg = 'SVR'
+name_rg = 'KNeighborsRegressor'
 results_df = pd.DataFrame()
 output_df = Patients_test[['caseid', 'Time']]
 for delay in [0, 30, 120, 300, 600]:  # Delay in seconds
@@ -87,7 +87,6 @@ for delay in [0, 30, 120, 300, 600]:  # Delay in seconds
     Train_data_MAP['caseid'] = Patients_train_MAP['caseid']
     Test_data_MAP['caseid'] = Patients_test_MAP['caseid']
     Test_data_MAP['Time'] = Patients_test_MAP['Time']
-
     i = 0
 
     for y_col in output:
@@ -113,11 +112,9 @@ for delay in [0, 30, 120, 300, 600]:  # Delay in seconds
             ps = PredefinedSplit(Patients_train['train_set'].values)
 
             # ---SVR----
-            rg = SVR(verbose=0, shrinking=False, cache_size=1000)  # kernel = 'poly', 'rbf'; 'linear', 'sigmoid'
-            Gridsearch = GridSearchCV(rg, {'kernel': ['rbf'], 'C': [0.1], 'degree': [2],
-                                           'gamma': np.logspace(-1, 3, 5), 'epsilon': np.logspace(-3, 1, 5)},  # np.logspace(-2,1,3)
-                                      n_jobs=8, cv=ps, scoring='r2', verbose=0)
-
+            rg = KNeighborsRegressor(n_jobs=8)
+            Gridsearch = GridSearchCV(rg, {'n_neighbors': [500, 1000, 2000, 3000],
+                                           'weights': ('uniform', 'distance')}, n_jobs=8, cv=ps)
             Gridsearch.fit(X_train[:], Y_train[:])
 
             print(Gridsearch.best_score_)
