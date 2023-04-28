@@ -18,3 +18,4 @@ backup/
 outputs/
 *.svg 
 saved_reg/
+*.html
