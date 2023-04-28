@@ -60,8 +60,8 @@ for i in range(len(id_split)):
     Patients_train.loc[Patients_train['caseid'].isin(id_split[i]), 'train_set'] = i
 
 # save train and test set
-Patients_train.to_csv("./Patients_train.csv")
-Patients_test.to_csv("./Patients_test.csv")
+Patients_train.to_csv("./data/Patients_train.csv")
+Patients_test.to_csv("./data/Patients_test.csv")
 
 
 # Print stats
