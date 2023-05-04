@@ -106,7 +106,7 @@ for caseid, Patient_df in cases.groupby('caseid'):
     istart = 0
     for i in range(len(Patient_df)):
         if Patient_df.loc[i, 'Propofol'] != 0 or Patient_df.loc[i, 'Remifentanil'] != 0:
-            istart = i
+            istart = max(0, i-60)  # start 1 min before
             break
     # removed before starting of anesthesia
     Patient_df = Patient_df[istart:]
