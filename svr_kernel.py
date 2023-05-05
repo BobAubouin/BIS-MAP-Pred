@@ -45,13 +45,14 @@ Patients_test_MAP = Patients_test_MAP[::step]
 # %% Model based Regressions
 
 feature = 'All'
-cov = ['age', 'sex', 'height', 'weight']
+cov = ['age', 'gender', 'height', 'weight']
 Ce_bis_eleveld = ['Ce_Prop_Eleveld', 'Ce_Rem_Eleveld']
 Ce_map_eleveld = ['Ce_Prop_MAP_Eleveld', 'Ce_Rem_MAP_Eleveld']
 Cplasma_eleveld = ['Cp_Prop_Eleveld', 'Cp_Rem_Eleveld']
 
 delay = 0  # Delay in seconds
-kernel = 'poly'
+kernel = 'linear'
+poly_degree = 2
 output = ['BIS', 'MAP']
 
 X_col = cov + ['bmi', 'lbm', 'mean_HR'] + Ce_map_eleveld + Ce_bis_eleveld + Cplasma_eleveld
@@ -65,8 +66,10 @@ Patients_test_MAP = Patients_test_MAP[X_col + ['caseid', output[1], 'Time']].dro
 # , 'ElasticNet', 'KNeighborsRegressor', 'KernelRidge'
 results_df = pd.DataFrame()
 for name_rg in ['SVR']:
-    filename = './saved_reg/reg_' + name_rg + '_feat_' + feature + '_kernek_' + kernel + '.pkl'
-    poly_degree = 2
+    if poly_degree > 1:
+        filename = f'./saved_reg/reg_{name_rg}_kernek_poly.pkl'
+    else:
+        filename = f'./saved_reg/reg_{name_rg}_kernek_{kernel}.pkl'
     pca_bool = False
     regressors = {}
 

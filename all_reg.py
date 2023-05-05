@@ -28,8 +28,10 @@ Patients_test = pd.read_csv("./data/Patients_test.csv", index_col=0)
 
 # %% Undersample data
 
-step = 120  # Undersampling step
-
+step = 60     # Undersampling step
+# keep only induction phase for training and tes
+# Patients_train = Patients_train[Patients_train['Time'] <= 5*60]
+# Patients_test = Patients_test[Patients_test['Time'] <= 5*60]
 
 Patients_train_BIS = Patients_train[Patients_train['full_BIS'] == 0]
 Patients_test_BIS = Patients_test[Patients_test['full_BIS'] == 0]
@@ -44,7 +46,7 @@ Patients_test_MAP = Patients_test_MAP[::step]
 # %% Model based Regressions
 
 feature = 'All'
-cov = ['age', 'sex', 'height', 'weight']
+cov = ['age', 'gender', 'height', 'weight']
 Ce_bis_eleveld = ['Ce_Prop_Eleveld', 'Ce_Rem_Eleveld']
 Ce_map_eleveld = ['Ce_Prop_MAP_Eleveld', 'Ce_Rem_MAP_Eleveld']
 Cplasma_eleveld = ['Cp_Prop_Eleveld', 'Cp_Rem_Eleveld']
@@ -77,7 +79,7 @@ Patients_test_MAP = Patients_test_MAP[X_col + ['caseid', 'MAP', 'Time']].dropna(
 results_df = pd.DataFrame()
 output_df = Patients_test[['caseid', 'Time']]
 for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR', 'MLPRegressor']:
-    filename = './saved_reg/reg_' + name_rg + '_feat_' + feature + '.pkl'
+    filename = f'./saved_reg/reg_{name_rg}_feat_{feature}.pkl'
     poly_degree = 1
     pca_bool = False
     regressors = {}
@@ -239,13 +241,13 @@ for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR', 'MLPR
         if y_col == 'BIS':
             Test_data_BIS['true_' + y_col] = Patients_test[y_col]
             Test_data_BIS['pred_' + y_col] = y_predicted
-            temp = Test_data_BIS[['caseid', 'Time', 'pred_' + y_col]]
+            temp = Test_data_BIS[['caseid', 'Time', 'pred_' + y_col]].copy()
             temp.rename(columns={'pred_' + y_col: y_col + '_' + name_rg}, inplace=True)
 
         else:
             Test_data_MAP['true_' + y_col] = Patients_test[y_col]
             Test_data_MAP['pred_' + y_col] = y_predicted
-            temp = Test_data_MAP[['caseid', 'Time', 'pred_' + y_col]]
+            temp = Test_data_MAP[['caseid', 'Time', 'pred_' + y_col]].copy()
             temp.rename(columns={'pred_' + y_col: y_col + '_' + name_rg}, inplace=True)
         output_df = pd.merge(output_df, temp,
                              on=['caseid', 'Time'], how='left')
@@ -300,6 +302,8 @@ for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR', 'MLPR
                            'RMSE': 'RMSE_MAP'}, inplace=True)
     df = pd.concat([pd.DataFrame({'name_rg': name_rg}, index=[0]), df_bis, df_map], axis=1)
     results_df = pd.concat([results_df, df], axis=0)
+
+    # plot_results(Test_data_BIS, Test_data_MAP, Train_data_BIS, Train_data_MAP)
 
 output_df.to_csv("./outputs/all_reg.csv")
 print('\n')

@@ -10,7 +10,7 @@ from metrics_functions import compute_metrics
 
 # %% Load data
 standard_data = pd.read_csv("./outputs/standard_model.csv")
-reg_data = pd.read_csv("./outputs/all_reg.csv")
+reg_data = pd.read_csv("./outputs/induction.csv")
 
 # Merge the data on standard_data
 reg_data = pd.merge(standard_data, reg_data, on=['caseid', 'Time'], how='left')

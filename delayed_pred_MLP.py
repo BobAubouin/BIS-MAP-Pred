@@ -45,7 +45,7 @@ Patients_test_MAP_init = Patients_test_MAP_init[::step]
 # %% Model based Regressions
 
 feature = 'All'
-cov = ['age', 'sex', 'height', 'weight']
+cov = ['age', 'gender', 'height', 'weight']
 Ce_bis_eleveld = ['Ce_Prop_Eleveld', 'Ce_Rem_Eleveld']
 Ce_map_eleveld = ['Ce_Prop_MAP_Eleveld', 'Ce_Rem_MAP_Eleveld']
 Cplasma_eleveld = ['Cp_Prop_Eleveld', 'Cp_Rem_Eleveld']
@@ -143,7 +143,7 @@ for delay in [0, 30, 120, 300, 600]:  # Delay in seconds
             Test_data_MAP[f'true_{y_col}'] = Patients_test[y_col]
             Test_data_MAP[f'pred_{y_col}'] = y_predicted
             temp = Test_data_MAP[['caseid', 'Time', 'pred_' + y_col]].copy()
-        temp.rename(columns={'pred_' + y_col: f'{y_col}_{name_rg}_{delay}'}, inplace=True)
+        temp.rename(columns={'pred_' + y_col: f'{y_col}_{name_rg}'}, inplace=True)
         output_df = pd.merge(output_df, temp,
                              on=['caseid', 'Time'], how='left')
         # -----------------test performances on train cases--------------------
