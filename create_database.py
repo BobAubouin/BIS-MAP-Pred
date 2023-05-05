@@ -71,7 +71,7 @@ cases.rename(columns={'BIS/BIS': 'BIS',
                       'Solar8000/NIBP_MBP': 'NI_MAP'}, inplace=True)
 # define bound for the values
 cols = ['BIS', 'MAP', 'HR', 'Propofol', 'Remifentanil', "Ce_Prop",
-        "Ce_Rem", "SQI", 'age', 'sex', 'height', 'weight', 'bmi']
+        "Ce_Rem", "SQI", 'age', 'gender', 'height', 'weight', 'bmi']
 
 min_val = {'BIS': 10, 'MAP': 50, 'Propofol': 0, 'Remifentanil': 0, "Ce_Prop": 0, "Ce_Rem": 0, "SQI": 50}
 max_val = {'BIS': 100, 'MAP': 160, 'Propofol': 1e3, 'Remifentanil': 1e3, "Ce_Prop": 1e3, "Ce_Rem": 1e3, "SQI": 100}
@@ -79,17 +79,12 @@ max_val = {'BIS': 100, 'MAP': 160, 'Propofol': 1e3, 'Remifentanil': 1e3, "Ce_Pro
 # %%
 Full_data = pd.DataFrame()
 
-nb_points = 0
-hist_Cp = 10*60
-windows_Cp = 30
-win_vec = np.ones(windows_Cp)
-
-
 for caseid, Patient_df in cases.groupby('caseid'):
     print(caseid)
     # find MAP baseline
     Patient_df = Patient_df.copy()
     Patient_df.reset_index(inplace=True)
+    Patient_df.drop(columns=['index'], inplace=True)
     Map_base_case = Patient_df['NI_MAP'].fillna(method='bfill')[0]
     Patient_df.insert(len(Patient_df.columns), "MAP_base_case", Map_base_case)
 
@@ -147,16 +142,6 @@ for caseid, Patient_df in cases.groupby('caseid'):
 
     Patient_df.loc[:, 'MAP'] = Patient_df['MAP'].ewm(span=20, min_periods=1).mean()
 
-    # Patient_df.loc[1000:1500,'BIS'].plot(ax = ax2)
-    # plt.title('case = ' + str(caseid))
-    # plt.show()
-
-    # Patient_df['BIS'].plot(ax = ax)
-    # plt.title('case = ' + str(caseid))
-    # plt.show()
-
-    # Patient_df.loc[:, 'HR'] = Patient_df['HR'].rolling(window_size, min_periods=1, center=True).apply(np.nanmean)
-
     Patient_df = Patient_df.fillna(method='ffill')
 
     Patient_df.insert(len(Patient_df.columns), "full_BIS", 0)
@@ -173,38 +158,14 @@ for caseid, Patient_df in cases.groupby('caseid'):
     Patient_df.loc[Patient_df['MAP'].isna(), 'full_MAP'] = np.ones(
         (len(Patient_df.loc[Patient_df['MAP'].isna(), 'full_MAP'])))
 
-    Patient_df.insert(len(Patient_df.columns), "med_BIS", np.nan)
-    Patient_df.insert(len(Patient_df.columns), "med_MAP", np.nan)
-
-    # Patient_df.loc[:, 'med_BIS'] = Patient_df.loc[:, 'BIS'].rolling(median_window, center=False).median()
-    # Patient_df.loc[:, 'med_MAP'] = Patient_df.loc[:, 'MAP'].rolling(median_window, center=False).median()
-
-    # Patient_df.insert(len(Patient_df.columns),"mean_HR", np.nanmedian(Patient_df.loc[:15*60, 'HR']))
-
-    # find first MAP non Nan
-    # for i in range(len(Patient_df)):
-    #     if not np.isnan(Patient_df.loc[i,"MAP"]):
-    #         first_map = i
-    #         break
-    # # find first BIS non Nan
-    # for i in range(len(Patient_df)):
-    #     if not np.isnan(Patient_df.loc[i,"BIS"]):
-    #         first_bis = i
-    #         break
-    # median_window = 600
-
-    # Patient_df.insert(len(Patient_df.columns),"med_BIS", np.nanmedian(Patient_df.loc[first_bis:median_window + first_bis,'BIS']))
-    # Patient_df.insert(len(Patient_df.columns),"med_MAP", np.nanmedian(Patient_df.loc[first_map :median_window + first_map,'MAP']))
-
-    # Patient_df.loc[:median_window + first_bis,'med_BIS'] = np.nan*np.ones(median_window + first_bis + 1)
-    # Patient_df.loc[:median_window + first_map,'med_MAP'] = np.nan*np.ones(median_window + first_map + 1)
-
-    nb_points += len(Patient_df['BIS'])
+    # Add time column
     Patient_df.insert(1, "Time", np.arange(0, len(Patient_df['BIS'])))
+
+    # Add personnal information to the dataframe
     age = perso_data.loc[perso_data['caseid'] == str(caseid), 'age'].astype(float).item()
     Patient_df.insert(len(Patient_df.columns), "age", age)
-    sex = (perso_data[perso_data['caseid'] == str(caseid)]['sex'] == 'M').astype(int).item()  # F = 0, M = 1
-    Patient_df.insert(len(Patient_df.columns), "sex", sex)
+    gender = (perso_data[perso_data['caseid'] == str(caseid)]['sex'] == 'M').astype(int).item()  # F = 0, M = 1
+    Patient_df.insert(len(Patient_df.columns), "gender", gender)
     weight = perso_data.loc[perso_data['caseid'] == str(caseid), 'weight'].astype(float).item()
     Patient_df.insert(len(Patient_df.columns), "weight", weight)
     height = perso_data.loc[perso_data['caseid'] == str(caseid), 'height'].astype(float).item()
@@ -212,17 +173,10 @@ for caseid, Patient_df in cases.groupby('caseid'):
     bmi = perso_data.loc[perso_data['caseid'] == str(caseid), 'bmi'].astype(float).item()
     Patient_df.insert(len(Patient_df.columns), "bmi", bmi)
 
-    # lbm computation
-    if sex == 1:  # homme
-        lbm = 1.1 * weight - 128 * (weight / height) ** 2
-    else:  # femme
-        lbm = 1.07 * weight - 148 * (weight / height) ** 2
-    Patient_df.insert(len(Patient_df.columns), "lbm", lbm)
-
-    model = "Eleveld"
-
-    # Eleveld model
-    Patient_simu = pas.Patient([age, height, weight, sex], model_propo=model, model_remi=model)
+    # Use the Python Anesthesia Simulator (PAS) to simulate the pharmacokinetics of propofol and remifentanil
+    model = "Eleveld"  # Eleveld model
+    Patient_simu = pas.Patient([age, height, weight, gender], model_propo=model, model_remi=model)
+    Patient_df.insert(len(Patient_df.columns), "lbm", Patient_simu.lbm)
     df_simu = Patient_simu.full_sim(u_propo=Patient_df['Propofol']*20/3600,
                                     u_remi=Patient_df['Remifentanil']*20/3600)
 
@@ -247,4 +201,5 @@ for caseid, Patient_df in cases.groupby('caseid'):
 
 
 # Save Patients DataFrame
+Full_data.drop(columns=['index'], inplace=True)
 Full_data.to_csv("./data/full_data.csv")

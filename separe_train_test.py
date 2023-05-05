@@ -88,15 +88,15 @@ if print_dist:
 
     for case in Patients_train.caseid.unique():
         p = Patients_train[Patients_train['caseid'] == case]
-        temp = p[['age', 'height', 'weight', 'sex']].to_numpy()
+        temp = p[['age', 'height', 'weight', 'gender']].to_numpy()
         Data_train.append(temp[0])
     for case in Patients_test.caseid.unique():
         p = Patients_test[Patients_test['caseid'] == case]
-        temp = p[['age', 'height', 'weight', 'sex']].to_numpy()
+        temp = p[['age', 'height', 'weight', 'gender']].to_numpy()
         Data_test.append(temp[0])
 
-    Data_plot_train = pd.DataFrame(data=Data_train, columns=['age', 'height', 'weight', 'sex'])
-    Data_plot_test = pd.DataFrame(data=Data_test, columns=['age', 'height', 'weight', 'sex'])
+    Data_plot_train = pd.DataFrame(data=Data_train, columns=['age', 'height', 'weight', 'gender'])
+    Data_plot_test = pd.DataFrame(data=Data_test, columns=['age', 'height', 'weight', 'gender'])
 
     fig, axs = plt.subplots(2, 2)
     Data_plot_train['age'].hist(label="train", alpha=0.5, ax=axs[0, 0])
@@ -115,13 +115,13 @@ if print_dist:
     axs[1, 0].set_title('Height')
     axs[1, 0].set_axisbelow(True)
 
-    Data_plot_train['sex'].hist(label="train", alpha=0.5, ax=axs[1, 1], rwidth=0.3,
-                                align='mid', bins=[-0.5, 0.5, 1.5])
-    Data_plot_test['sex'].hist(label="test", ax=axs[1, 1], rwidth=0.3,
-                               align='mid', bins=[-0.5, 0.5, 1.5])
+    Data_plot_train['gender'].hist(label="train", alpha=0.5, ax=axs[1, 1], rwidth=0.3,
+                                   align='mid', bins=[-0.5, 0.5, 1.5])
+    Data_plot_test['gender'].hist(label="test", ax=axs[1, 1], rwidth=0.3,
+                                  align='mid', bins=[-0.5, 0.5, 1.5])
     axs[1, 1].set_xlim(-1, 2)
     axs[1, 1].set_xticks([0, 1], ['F', 'M'])
-    axs[1, 1].set_title('Sex')
+    axs[1, 1].set_title('Gender')
     axs[1, 1].set_axisbelow(True)
     fig.tight_layout()
     savepath = "/home/aubouinb/ownCloud/Anesthesie/Science/Bob/Journal_model/Images/dataset_info.pdf"

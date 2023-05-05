@@ -47,9 +47,9 @@ for caseid, Patient_df in Patients_test.groupby('caseid'):
     age = int(Patient_df['age'].iloc[0])
     height = int(Patient_df['height'].iloc[0])
     weight = int(Patient_df['weight'].iloc[0])
-    sex = int(Patient_df['sex'].iloc[0])
+    gender = int(Patient_df['gender'].iloc[0])
 
-    patient_char = [age, height, weight, sex]
+    patient_char = [age, height, weight, gender]
     Patient_simu_Schnider = pas.Patient(patient_char,
                                         model_propo='Schnider', model_remi='Minto',
                                         map_base=MAP_base_case)

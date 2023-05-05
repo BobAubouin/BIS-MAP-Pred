@@ -12,7 +12,7 @@ import numpy as np
 
 Patients_test = pd.read_csv("./data/Patients_test.csv")
 Patients_test = Patients_test[['caseid', 'Time', 'BIS', 'SQI', 'Propofol',
-                              'Remifentanil', 'age', 'sex', 'weight', 'height', 'full_BIS']]
+                              'Remifentanil', 'age', 'gender', 'weight', 'height', 'full_BIS']]
 Patients_test.rename({'full_BIS': 'full'}, axis=1, inplace=True)
 # scale the inputs
 Patients_test['Propofol'] = Patients_test['Propofol']*20/360
@@ -73,7 +73,7 @@ for id, case in raw_data.items():  # for each case
         ppf_dose = row[3]
         rft_dose = row[4]
         age = row[5]
-        sex = row[6]
+        gender = row[6]
         wt = row[7]
         ht = row[8]
         ppf_seq.append(ppf_dose)  # make time sequence
@@ -104,7 +104,7 @@ for id, case in raw_data.items():  # for each case
 
         case_p.append(pvals)
         case_r.append(rvals)
-        case_c.append([age, sex, wt, ht])
+        case_c.append([age, gender, wt, ht])
         case_y.append(bis)
 
     test_p[id] = case_p
