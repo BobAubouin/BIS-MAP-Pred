@@ -111,7 +111,6 @@ def plot_results(data_BIS, data_MAP, data_train_BIS=None, data_train_MAP=None):
         col_name for col_name in data_BIS.columns if col_name.startswith('true_BIS')]].values[:, 0]
     y_pred_test = data_BIS[[
         col_name for col_name in data_BIS.columns if col_name.startswith('pred_BIS')]].values[:, 0]
-    print(y_true_test)
     if data_train_BIS is not None:
         train = True
         y_true_train = data_train_BIS[[
@@ -163,9 +162,9 @@ def plot_results(data_BIS, data_MAP, data_train_BIS=None, data_train_MAP=None):
         col_name for col_name in data_MAP.columns if col_name.startswith('pred_MAP')]].values[:, 0]
     if train:
         y_true_train = data_train_MAP[[
-            col_name for col_name in data_train_MAP.columns if col_name.startswith('true_BIS')]].values[:, 0]
+            col_name for col_name in data_train_MAP.columns if col_name.startswith('true_MAP')]].values[:, 0]
         y_pred_train = data_train_MAP[[
-            col_name for col_name in data_train_MAP.columns if col_name.startswith('pred_BIS')]].values[:, 0]
+            col_name for col_name in data_train_MAP.columns if col_name.startswith('pred_MAP')]].values[:, 0]
 
     fig1 = figure(width=900, height=450, title="Data (blue) Vs Fitted data (red)")
     fig1.line(np.arange(0, len(y_true_test)), y_true_test, line_color='navy', legend_label="y")
