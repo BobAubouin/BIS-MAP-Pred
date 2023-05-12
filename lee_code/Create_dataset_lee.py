@@ -76,12 +76,12 @@ for id, case in raw_data.items():  # for each case
         gender = row[6]
         wt = row[7]
         ht = row[8]
+        time = row[0]
         ppf_seq.append(ppf_dose)  # make time sequence
         rft_seq.append(rft_dose)
 
         if ifirst is None:  # before started
-            if ppf_dose < 1:
-
+            if ppf_dose < 1:  # not started
                 continue
             ifirst = isamp
         else:  # started
@@ -104,7 +104,7 @@ for id, case in raw_data.items():  # for each case
 
         case_p.append(pvals)
         case_r.append(rvals)
-        case_c.append([age, gender, wt, ht])
+        case_c.append([age, gender, wt, ht, time])
         case_y.append(bis)
 
     test_p[id] = case_p

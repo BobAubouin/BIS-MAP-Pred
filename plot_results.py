@@ -17,40 +17,60 @@ plt.rc('font', family='serif')
 standard_data = pd.read_csv("./outputs/standard_model.csv")
 all_reg_data = pd.read_csv("./outputs/all_reg.csv")
 delay_data = pd.read_csv("./outputs/delay.csv")
+lee_data = pd.read_csv("./outputs/output_lee.csv")
+induction_data = pd.read_csv('outputs/induction.csv')
+
+lee_data.rename(columns={'pred_BIS': 'pred_BIS_Lee', 'case_id': 'caseid'}, inplace=True)
+induction_data.rename(columns={'BIS_ElasticNet': 'BIS_ElasticNet_induction',
+                               'BIS_KNeighborsRegressor': 'BIS_KNeighborsRegressor_induction',
+                               'BIS_KernelRidge': 'BIS_KernelRidge_induction',
+                               'BIS_SVR': 'BIS_SVR_induction',
+                               'BIS_MLPRegressor': 'BIS_MLPRegressor_induction'}, inplace=True)
 
 # merge the data on standard_data
 
 df = pd.merge(standard_data, all_reg_data, on=['caseid', 'Time'], how='left')
 df = pd.merge(df, delay_data, on=['caseid', 'Time'], how='left')
+df = pd.merge(df, lee_data[['caseid', 'Time', 'pred_BIS_Lee']], on=['caseid', 'Time'], how='left')
+df = pd.merge(df, induction_data[['caseid', 'Time', 'BIS_ElasticNet_induction',
+                                  'BIS_KNeighborsRegressor_induction', 'BIS_KernelRidge_induction',
+                                  'BIS_SVR_induction', 'BIS_MLPRegressor_induction']], on=['caseid', 'Time'], how='left')
 
 # %% plot the results
 
-case_id = 2943
+case_id = 2628
 df_case = df[df['caseid'] == case_id].copy()
 df_case.fillna(method='ffill', inplace=True)
 
-fig, ax = plt.subplots(2, 1, figsize=(6, 4), sharex=True)
+plt.figure(figsize=(6, 2))
+plt.plot(df_case['Time']/60, df_case['true_BIS'], label='data')
+plt.plot(df_case['Time']/60, df_case['pred_BIS_Eleveld'], label='Eleveld model')
+plt.plot(df_case['Time']/60, df_case['pred_BIS_Lee'], label='deep-learning')
+plt.plot(df_case['Time']/60, df_case['BIS_SVR'], label='SVR')
+# plt.plot(df_case['Time'], df_case['BIS_MLPRegressor'], label='RNN')
+# plt.plot(df_case['Time'], df_case['BIS_KNeighborsRegressor_x'], label='KNeighbors')
+# plt.plot(df_case['Time'], df_case['pred_BIS_delay'], label='delayed SVR')
+plt.ylabel('BIS')
+plt.xlabel('Time (min)')
+plt.legend()
+plt.grid()
+savepath = f'./outputs/figs/BIS_case_{case_id}.pdf'
+plt.savefig(savepath, bbox_inches='tight', format='pdf')
+plt.show()
 
-ax[0].plot(df_case['Time'], df_case['true_BIS'], label='data')
-ax[0].plot(df_case['Time'], df_case['pred_BIS_Eleveld'], label='Eleveld model')
-ax[0].plot(df_case['Time'], df_case['BIS_SVR'], label='SVR')
-ax[0].plot(df_case['Time'], df_case['BIS_MLPRegressor'], label='RNN')
-ax[0].plot(df_case['Time'], df_case['BIS_KNeighborsRegressor_x'], label='KNeighbors')
-# ax[0].plot(df_case['Time'], df_case['pred_BIS_delay'], label='delayed SVR')
-ax[0].set_ylabel('BIS')
-ax[0].legend()
-ax[0].grid()
+plt.figure(figsize=(6, 2))
+plt.plot(df_case['Time']/60, df_case['true_MAP'], label='data')
+plt.plot(df_case['Time']/60, df_case['pred_MAP_Eleveld'], label='Eleveld model')
+plt.plot(df_case['Time']/60, df_case['MAP_SVR'], label='SVR', color='#d62728')
+# plt.plot(df_case['Time'], df_case['MAP_MLPRegressor'], label='RNN')
+# ax[1].plot(df_case['Time'], df_case['MAP_KNeighborsRegressor_x'], label='KNeighbors')
 
-ax[1].plot(df_case['Time'], df_case['true_MAP'], label='true MAP')
-ax[1].plot(df_case['Time'], df_case['pred_MAP_Eleveld'], label='Eleveld model')
-ax[1].plot(df_case['Time'], df_case['MAP_SVR'], label='SVR')
-ax[1].plot(df_case['Time'], df_case['MAP_MLPRegressor'], label='RNN')
-ax[1].plot(df_case['Time'], df_case['MAP_KNeighborsRegressor_x'], label='KNeighbors')
-
-ax[1].set_ylabel('MAP')
-ax[1].set_xlabel('Time (min)')
-ax[1].legend()
-ax[1].grid()
+plt.ylabel('MAP')
+plt.xlabel('Time (min)')
+plt.legend()
+plt.grid()
+savepath = f'./outputs/figs/MAP_case_{case_id}.pdf'
+plt.savefig(savepath, bbox_inches='tight', format='pdf')
 plt.show()
 # %% plot different delay
 
@@ -133,7 +153,7 @@ for case_id in df_induction['caseid'].unique():
     df_case = df_induction[df_induction['caseid'] == case_id]
     p.line(df_case['Time'], df_case['true_BIS'] - df_case['pred_BIS_Eleveld'],
            legend_label='Eleveld', line_color='red')
-    p.line(df_case['Time'], df_case['true_BIS'] - df_case['BIS_KNeighborsRegressor_x'],
+    p.line(df_case['Time'], df_case['true_BIS'] - df_case['BIS_KNeighborsRegressor'],
            legend_label='MLP reg', line_color='blue')
 
 show(p)
@@ -144,3 +164,33 @@ p.yaxis.axis_label = 'BIS error'
 
 
 show(p)
+
+# %% same in matplotlib
+
+df_induction = df[df['Time'] < 6*60]
+# df_induction = df_induction[df_induction['Time'] > 1*60]
+df_induction.fillna(method='bfill', inplace=True)
+fig, ax = plt.subplots(1, 1, figsize=(6, 2))
+flag = True
+for case_id in df_induction['caseid'].unique():
+
+    df_case = df_induction[df_induction['caseid'] == case_id]
+    if flag:
+        plt.plot(df_case['Time']/60, df_case['true_BIS'] - df_case['pred_BIS_Eleveld'],
+                 color='red', alpha=1, label='Eleveld')
+        plt.plot(df_case['Time']/60, df_case['true_BIS'] - df_case['BIS_ElasticNet_induction'],
+                 color='blue', alpha=1, label='ElasticNet')
+        flag = False
+    else:
+        plt.plot(df_case['Time']/60, df_case['true_BIS'] - df_case['pred_BIS_Eleveld'],
+                 color='red', alpha=1)
+        plt.plot(df_case['Time']/60, df_case['true_BIS'] - df_case['BIS_ElasticNet_induction'],
+                 color='blue', alpha=1)
+
+plt.legend()
+plt.xlabel('Time (min)')
+plt.ylabel('BIS error')
+plt.grid()
+savepath = f'./outputs/figs/induction.pdf'
+plt.savefig(savepath, bbox_inches='tight', format='pdf')
+plt.show()

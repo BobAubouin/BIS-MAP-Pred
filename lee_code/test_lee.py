@@ -131,7 +131,7 @@ model = load_model(weight_path)
 # %% test model
 sample_nb = 0
 
-Output_df = pd.DataFrame(columns=['case_id', 'true_BIS', 'pred_BIS'])
+Output_df = pd.DataFrame(columns=['case_id', 'Time', 'true_BIS', 'pred_BIS'])
 
 
 print('id\ttesting_err')
@@ -140,6 +140,8 @@ for id in test_p.keys():
     case_p = np.array(test_p[id])
     case_r = np.array(test_r[id])
     case_c = np.array(test_c[id])
+    time = case_c[:, -1]
+    case_c = case_c[:, :-1]
     true_y = np.array(test_y[id])
     true_y = np.array(true_y)
 
@@ -164,10 +166,11 @@ for id in test_p.keys():
     Output_df_temp['case_id'] = np.ones((case_len)) * float(id)
     Output_df_temp['true_BIS'] = true_y*100
     Output_df_temp['pred_BIS'] = pred_y*100
+    Output_df_temp['Time'] = time
     Output_df = pd.concat([Output_df, Output_df_temp], ignore_index=True)
 
 compute_metrics(Output_df)
-Output_df.to_csv(dir + '/output_lee.csv')
+Output_df.to_csv(dir + '/../outputs/output_lee.csv')
 # %%plot function
 
 
