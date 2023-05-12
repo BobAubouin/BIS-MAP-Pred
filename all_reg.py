@@ -78,7 +78,8 @@ Patients_test_MAP = Patients_test_MAP[X_col + ['caseid', 'MAP', 'Time']].dropna(
 
 results_df = pd.DataFrame()
 output_df = Patients_test[['caseid', 'Time']]
-for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR', 'MLPRegressor']:
+# 'ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'MLPRegressor'
+for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR']:
     filename = f'./saved_reg/reg_{name_rg}_feat_{feature}.pkl'
     poly_degree = 1
     pca_bool = False
@@ -293,10 +294,14 @@ for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR', 'MLPR
         f"***{' Test Results ':-^30s}***")
 
     max_case_bis, min_case_bis, df_bis = compute_metrics(Test_data_BIS)
+    print(f'worst bis case: {max_case_bis}')
+    print(f'best bis case: {min_case_bis}')
     df_bis.rename(columns={'MDPE': 'MDPE_BIS',
                            'MDAPE': 'MDAPE_BIS',
                            'RMSE': 'RMSE_BIS'}, inplace=True)
     max_case_map, min_case_map, df_map = compute_metrics(Test_data_MAP)
+    print(f'worst map case: {max_case_map}')
+    print(f'best map case: {min_case_map}')
     df_map.rename(columns={'MDPE': 'MDPE_MAP',
                            'MDAPE': 'MDAPE_MAP',
                            'RMSE': 'RMSE_MAP'}, inplace=True)

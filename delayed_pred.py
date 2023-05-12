@@ -45,7 +45,7 @@ Patients_test_MAP_init = Patients_test_MAP_init[::step]
 # %% Model based Regressions
 
 feature = 'All'
-cov = ['age', 'sex', 'height', 'weight']
+cov = ['age', 'gender', 'height', 'weight']
 Ce_bis_eleveld = ['Ce_Prop_Eleveld', 'Ce_Rem_Eleveld']
 Ce_map_eleveld = ['Ce_Prop_MAP_Eleveld', 'Ce_Rem_MAP_Eleveld']
 Cplasma_eleveld = ['Cp_Prop_Eleveld', 'Cp_Rem_Eleveld']

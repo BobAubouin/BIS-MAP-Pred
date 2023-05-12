@@ -8,6 +8,12 @@ from sklearn.model_selection import train_test_split
 
 dataframe = pd.read_csv("./data/full_data.csv")
 
+# find first target value for each case
+dataframe_by_caseid = dataframe.groupby("caseid")
+first_target = dataframe_by_caseid.Target_Remi.first()
+first_target = first_target[first_target.notnull()]
+first_target.hist()
+
 # dataframe.Target_Propo.fillna(method="ffill", inplace=True)
 # dataframe.Target_Remi.fillna(method="ffill", inplace=True)
 

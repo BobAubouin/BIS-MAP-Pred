@@ -51,8 +51,8 @@ Ce_map_eleveld = ['Ce_Prop_MAP_Eleveld', 'Ce_Rem_MAP_Eleveld']
 Cplasma_eleveld = ['Cp_Prop_Eleveld', 'Cp_Rem_Eleveld']
 
 delay = 0  # Delay in seconds
-kernel = 'linear'
-poly_degree = 2
+kernel = 'sigmoid'
+poly_degree = 1
 output = ['BIS', 'MAP']
 
 X_col = cov + ['bmi', 'lbm', 'mean_HR'] + Ce_map_eleveld + Ce_bis_eleveld + Cplasma_eleveld
@@ -66,8 +66,10 @@ Patients_test_MAP = Patients_test_MAP[X_col + ['caseid', output[1], 'Time']].dro
 # , 'ElasticNet', 'KNeighborsRegressor', 'KernelRidge'
 results_df = pd.DataFrame()
 for name_rg in ['SVR']:
-    if poly_degree > 1:
+    if poly_degree == 2:
         filename = f'./saved_reg/reg_{name_rg}_kernek_poly.pkl'
+    elif poly_degree == 3:
+        filename = f'./saved_reg/reg_{name_rg}_kernek_poly3.pkl'
     else:
         filename = f'./saved_reg/reg_{name_rg}_kernek_{kernel}.pkl'
     pca_bool = False
@@ -82,13 +84,13 @@ for name_rg in ['SVR']:
 
     Train_data_BIS = pd.DataFrame()
     Test_data_BIS = pd.DataFrame()
-    Train_data_BIS['case_id'] = Patients_train_BIS['caseid']
-    Test_data_BIS['case_id'] = Patients_test_BIS['caseid']
+    Train_data_BIS['caseid'] = Patients_train_BIS['caseid']
+    Test_data_BIS['caseid'] = Patients_test_BIS['caseid']
 
     Train_data_MAP = pd.DataFrame()
     Test_data_MAP = pd.DataFrame()
-    Train_data_MAP['case_id'] = Patients_train_MAP['caseid']
-    Test_data_MAP['case_id'] = Patients_test_MAP['caseid']
+    Train_data_MAP['caseid'] = Patients_train_MAP['caseid']
+    Test_data_MAP['caseid'] = Patients_test_MAP['caseid']
 
     i = 0
     for y_col in output:
@@ -112,12 +114,15 @@ for name_rg in ['SVR']:
             X_train = scaler.fit_transform(X_train)
             poly = PolynomialFeatures(degree=poly_degree)
             X_train = poly.fit_transform(X_train)
+            if poly_degree == 3:
+                pca = PCA(n_components=10)
+                X_train = pca.fit_transform(X_train)
 
             ps = PredefinedSplit(Patients_train['train_set'].values)
 
             # ---SVR----
             rg = SVR(verbose=0, shrinking=False, cache_size=1000)  # kernel = 'poly', 'rbf'; 'linear', 'sigmoid'
-            Gridsearch = GridSearchCV(rg, {'kernel': ['linear'], 'C': [0.1], 'degree': [2],
+            Gridsearch = GridSearchCV(rg, {'kernel': [kernel], 'C': [0.1], 'degree': [2],
                                            'gamma': np.logspace(-1, 3, 5), 'epsilon': np.logspace(-3, 1, 5)},  # np.logspace(-2,1,3)
                                       n_jobs=8, cv=ps, scoring='r2', verbose=0)
 
@@ -134,13 +139,18 @@ for name_rg in ['SVR']:
 
         X_train = Patients_train[X_col].values
         scaler = StandardScaler()
-        scaler.fit(X_train)
+        X_train = scaler.fit_transform(X_train)
         poly = PolynomialFeatures(degree=poly_degree)
-        poly.fit(X_train)
+        X_train = poly.fit_transform(X_train)
+        if poly_degree == 3:
+            pca = PCA(n_components=10)
+            pca.fit_transform(poly.transform(X_train))
 
         X_test = Patients_test[X_col].values
         X_test = scaler.transform(X_test)
         X_test = poly.transform(X_test)
+        if poly_degree == 3:
+            X_test = pca.transform(X_test)
         y_predicted = rg.predict(X_test)
 
         col_name = 'pred_' + y_col + '_' + name_rg
@@ -153,10 +163,6 @@ for name_rg in ['SVR']:
             Test_data_MAP['pred_' + y_col] = y_predicted
             results_MAP.loc[:, col_name] = y_predicted
         # -----------------test performances on train cases--------------------
-
-        X_train = Patients_train[X_col].values
-        X_train = scaler.transform(X_train)
-        X_train = poly.transform(X_train)
 
         y_predicted_train = rg.predict(X_train)
 
@@ -187,7 +193,7 @@ for name_rg in ['SVR']:
     df = pd.concat([pd.DataFrame({'name_rg': name_rg}, index=[0]), df_bis, df_map], axis=1)
     results_df = pd.concat([results_df, df], axis=0)
 print('\n')
-styler = results_df.style
+styler = results_df[['MDAPE_BIS', 'MDAPE_MAP']].style
 styler.hide(axis='index')
 # styler.format(precision=2)
 print(styler.to_latex())

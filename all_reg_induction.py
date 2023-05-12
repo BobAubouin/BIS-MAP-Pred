@@ -30,8 +30,8 @@ Patients_test = pd.read_csv("./data/Patients_test.csv", index_col=0)
 
 step = 2  # Undersampling step
 # keep only induction phase for training and tes
-Patients_train = Patients_train[Patients_train['Time'] <= 5*60]
-Patients_test = Patients_test[Patients_test['Time'] <= 5*60]
+Patients_train = Patients_train[Patients_train['Time'] <= 6*60]
+Patients_test = Patients_test[Patients_test['Time'] <= 6*60]
 
 Patients_train_BIS = Patients_train[Patients_train['full_BIS'] == 0]
 Patients_test_BIS = Patients_test[Patients_test['full_BIS'] == 0]
@@ -148,7 +148,7 @@ for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR', 'MLPR
             # ---SVR----
             elif name_rg == 'SVR':
                 rg = SVR(verbose=0, shrinking=False, cache_size=1000)  # kernel = 'poly', 'rbf'; 'linear'
-                Gridsearch = GridSearchCV(rg, {'kernel': ['rbf'], 'C': [0.1],
+                Gridsearch = GridSearchCV(rg, {'kernel': ['rbf', 'linear'], 'C': [0.1],
                                                'gamma': np.logspace(-1, 3, 5), 'epsilon': np.logspace(-3, 1, 5)},  # np.logspace(-2,1,3)
                                           n_jobs=8, cv=ps, scoring='r2', verbose=0)
 
