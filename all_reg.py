@@ -28,7 +28,8 @@ Patients_test = pd.read_csv("./data/Patients_test.csv", index_col=0)
 
 # %% Undersample data
 
-step = 60     # Undersampling step
+step_test = 10     # Undersampling step
+step_train = 60    # Undersampling step
 # keep only induction phase for training and tes
 # Patients_train = Patients_train[Patients_train['Time'] <= 5*60]
 # Patients_test = Patients_test[Patients_test['Time'] <= 5*60]
@@ -38,10 +39,10 @@ Patients_test_BIS = Patients_test[Patients_test['full_BIS'] == 0]
 Patients_train_MAP = Patients_train[Patients_train['full_MAP'] == 0]
 Patients_test_MAP = Patients_test[Patients_test['full_MAP'] == 0]
 
-Patients_train_BIS = Patients_train_BIS[::step]
-Patients_test_BIS = Patients_test_BIS[::step]
-Patients_train_MAP = Patients_train_MAP[::step]
-Patients_test_MAP = Patients_test_MAP[::step]
+Patients_train_BIS = Patients_train_BIS[::step_train]
+Patients_test_BIS = Patients_test_BIS[::step_test]
+Patients_train_MAP = Patients_train_MAP[::step_train]
+Patients_test_MAP = Patients_test_MAP[::step_test]
 
 # %% Model based Regressions
 
@@ -79,7 +80,7 @@ Patients_test_MAP = Patients_test_MAP[X_col + ['caseid', 'MAP', 'Time']].dropna(
 results_df = pd.DataFrame()
 output_df = Patients_test[['caseid', 'Time']]
 # 'ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'MLPRegressor'
-for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR']:
+for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR', 'MLPRegressor']:
     filename = f'./saved_reg/reg_{name_rg}_feat_{feature}.pkl'
     poly_degree = 1
     pca_bool = False
@@ -134,7 +135,7 @@ for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR']:
             if name_rg == 'ElasticNet':
                 rg = ElasticNet(max_iter=100000)
                 Gridsearch = GridSearchCV(rg, {'alpha': np.logspace(-4, 0, 5), 'l1_ratio': np.linspace(0, 1, 11)},
-                                          n_jobs=8, cv=ps, scoring='r2', verbose=0)
+                                          n_jobs=6, cv=ps, scoring='r2', verbose=0)
                 Gridsearch.fit(X_train, Y_train)
 
             # ---KernelRidge----
@@ -142,7 +143,7 @@ for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR']:
                 parameters = {'kernel': ('linear', 'rbf', 'polynomial'), 'alpha': np.logspace(-3, 1, 5)}
                 rg = KernelRidge()
                 # kmeans = KMeans(n_clusters=5000, random_state=0, verbose=4).fit(np.concatenate((X_train,np.expand_dims(Y_train,axis=1)),axis=1))
-                Gridsearch = GridSearchCV(rg, parameters, cv=ps, n_jobs=8,
+                Gridsearch = GridSearchCV(rg, parameters, cv=ps, n_jobs=6,
                                           scoring='neg_mean_squared_error', return_train_score=True, verbose=4)
                 Gridsearch.fit(X_train, Y_train)
 
@@ -151,7 +152,7 @@ for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR']:
                 rg = SVR(verbose=0, shrinking=False, cache_size=1000)  # kernel = 'poly', 'rbf'; 'linear'
                 Gridsearch = GridSearchCV(rg, {'kernel': ['rbf'], 'C': [0.1],
                                                'gamma': np.logspace(-1, 3, 5), 'epsilon': np.logspace(-3, 1, 5)},  # np.logspace(-2,1,3)
-                                          n_jobs=8, cv=ps, scoring='r2', verbose=0)
+                                          n_jobs=6, cv=ps, scoring='r2', verbose=0)
 
                 Gridsearch.fit(X_train[:], Y_train[:])
 
@@ -175,9 +176,9 @@ for name_rg in ['ElasticNet', 'KNeighborsRegressor', 'KernelRidge', 'SVR']:
                                                'lambda_2': [1e-6, 1e-7, 1e-5]}, n_jobs=8, cv=ps)
                 Gridsearch.fit(X_train, Y_train)
             elif name_rg == 'KNeighborsRegressor':
-                rg = KNeighborsRegressor(n_jobs=8)
+                rg = KNeighborsRegressor(n_jobs=6)
                 Gridsearch = GridSearchCV(
-                    rg, {'n_neighbors': [500, 1000, 2000, 3000], 'weights': ('uniform', 'distance')}, n_jobs=8, cv=ps)
+                    rg, {'n_neighbors': [500, 1000, 2000, 3000], 'weights': ('uniform', 'distance')}, n_jobs=6, cv=ps)
                 Gridsearch.fit(X_train, Y_train)
             elif name_rg == 'HuberRegressor':
                 rg = HuberRegressor(max_iter=1000)

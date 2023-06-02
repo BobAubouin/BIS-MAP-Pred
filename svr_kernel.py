@@ -27,20 +27,19 @@ Patients_test = pd.read_csv("./data/Patients_test.csv", index_col=0)
 
 # %% Undersample data
 
-step = 60  # Undersampling step
+step_test = 10     # Undersampling step
+step_train = 60    # Undersampling step
 
-
-Patients_test_full = Patients_test.copy()
 
 Patients_train_BIS = Patients_train[Patients_train['full_BIS'] == 0]
 Patients_test_BIS = Patients_test[Patients_test['full_BIS'] == 0]
 Patients_train_MAP = Patients_train[Patients_train['full_MAP'] == 0]
 Patients_test_MAP = Patients_test[Patients_test['full_MAP'] == 0]
 
-Patients_train_BIS = Patients_train_BIS[::step]
-Patients_test_BIS = Patients_test_BIS[::step]
-Patients_train_MAP = Patients_train_MAP[::step]
-Patients_test_MAP = Patients_test_MAP[::step]
+Patients_train_BIS = Patients_train_BIS[::step_train]
+Patients_test_BIS = Patients_test_BIS[::step_test]
+Patients_train_MAP = Patients_train_MAP[::step_train]
+Patients_test_MAP = Patients_test_MAP[::step_test]
 
 # %% Model based Regressions
 
@@ -51,8 +50,8 @@ Ce_map_eleveld = ['Ce_Prop_MAP_Eleveld', 'Ce_Rem_MAP_Eleveld']
 Cplasma_eleveld = ['Cp_Prop_Eleveld', 'Cp_Rem_Eleveld']
 
 delay = 0  # Delay in seconds
-kernel = 'sigmoid'
-poly_degree = 1
+kernel = 'linear'
+poly_degree = 2
 output = ['BIS', 'MAP']
 
 X_col = cov + ['bmi', 'lbm', 'mean_HR'] + Ce_map_eleveld + Ce_bis_eleveld + Cplasma_eleveld
